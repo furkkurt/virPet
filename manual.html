@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VirPet — Kod El Kitabı</title>
+  <style>
+    :root { --bg: #fff8e0; --text: #3d3028; --accent: #8b6914; --code: #f5f0e6; --border: #d4c4a8; }
+    * { box-sizing: border-box; }
+    body { font-family: Georgia, "Times New Roman", serif; line-height: 1.65; color: var(--text); background: var(--bg); margin: 0; padding: 0; }
+    header { background: #5c483a; color: #fff8e0; padding: 2rem 1.5rem; }
+    header h1 { margin: 0 0 0.5rem; font-size: 1.9rem; }
+    header p { margin: 0; opacity: 0.9; max-width: 52rem; }
+    main { max-width: 52rem; margin: 0 auto; padding: 1.5rem; }
+    nav { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 2rem; }
+    nav h2 { margin-top: 0; font-size: 1.1rem; color: var(--accent); }
+    nav ol { margin: 0; padding-left: 1.25rem; }
+    nav a { color: #5c483a; }
+    h2 { color: var(--accent); border-bottom: 2px solid var(--border); padding-bottom: 0.3rem; margin-top: 2.5rem; }
+    h3 { color: #5c483a; margin-top: 1.5rem; }
+    h4 { color: #5c483a; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+    pre, code { font-family: "Consolas", "Monaco", monospace; font-size: 0.88rem; }
+    pre { background: var(--code); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    code { background: #ebe4d4; padding: 0.1em 0.35em; border-radius: 3px; }
+    .diagram { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1rem 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; }
+    th { background: #ebe4d4; }
+    .note { background: #fff; border-left: 4px solid var(--accent); padding: 0.75rem 1rem; margin: 1rem 0; }
+    footer { text-align: center; padding: 2rem; color: #7a6a5a; font-size: 0.9rem; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral' });</script>
+</head>
+<body>
+<header>
+  <h1>VirPet — Kod El Kitabı</h1>
+  <p>Bu belge, <strong>virPet</strong> masaüstü projesinin nasıl çalıştığını başlangıç seviyesindeki bir okuyucuya anlatır.
+  Amacımız: Birisi size "şu dosyada şu satır ne yapıyor?" diye sorduğunda cevap verebilmeniz.</p>
+</header>
+<main>
+
+<nav>
+  <h2>İçindekiler</h2>
+  <ol>
+    <li><a href="#oyun">Oyun nedir?</a></li>
+    <li><a href="#yapi">Proje yapısı</a></li>
+    <li><a href="#akis">Oyun akışı (grafikler)</a></li>
+    <li><a href="#dosyalar">Java dosyaları tek tek</a></li>
+    <li><a href="#kavramlar">Java ve Swing kavramları</a></li>
+    <li><a href="#algoritmalar">Temel algoritmalar</a></li>
+    <li><a href="#kutuphaneler">Kullanılan kütüphaneler ve import'lar</a></li>
+    <li><a href="#ornekler">Örnek kod bölümleri</a></li>
+    <li><a href="#android">Android port (detaylı)</a></li>
+    <li><a href="#calistirma">Nasıl çalıştırılır?</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════ 1 ═══ -->
+<section id="oyun">
+<h2>1. Oyun nedir?</h2>
+<p>VirPet, <strong>Reigns</strong> tarzı bir sanal evcil hayvan oyunudur:</p>
+<ul>
+  <li>Önce pet'inizi oluşturursunuz (şapka, vücut, yüz, bacak).</li>
+  <li>İsmini yazarsınız.</li>
+  <li>Oyun ekranında rastgele <strong>olay kartları</strong> gelir; <em>Yes</em> veya <em>No</em> seçersiniz.</li>
+  <li>Her seçim dört sayıyı değiştirir: <strong>açlık, sevgi, kilo, sağlık</strong> (0–100).</li>
+  <li>Zaman geçtikçe değerler kendiliğinden kayar (açlık artar, sevgi azalır…).</li>
+  <li>Sağlık 0 veya sevgi 0 olursa oyun biter; <em>Play again</em> ile başa dönersiniz.</li>
+</ul>
+<div class="diagram">
+<pre class="mermaid">
+flowchart TD
+  A[Uygulama açılır] --> B[Oluşturma ekranı]
+  B --> C{Start}
+  C --> D[Oyun ekranı]
+  D --> E[Olay kartı göster]
+  E --> F{Yes / No}
+  F --> G[Statları güncelle]
+  G --> H[Zaman geçişi]
+  H --> I{Kaybettin mi?}
+  I -->|Hayır| E
+  I -->|Evet| J[Game over mesajı]
+  J --> K[Play again]
+  K --> B
+</pre>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 2 ═══ -->
+<section id="yapi">
+<h2>2. Proje yapısı</h2>
+<table>
+  <tr><th>Dosya / klasör</th><th>Görevi</th></tr>
+  <tr><td><code>PetCreationApp.java</code></td><td>Ana pencere, tüm arayüz (Swing), oyun döngüsü</td></tr>
+  <tr><td><code>PetGameModel.java</code></td><td>Sayısal kurallar: statlar, zaman, kaybetme</td></tr>
+  <tr><td><code>PetSpriteComposer.java</code></td><td>Parça PNG'lerini üst üste birleştirir</td></tr>
+  <tr><td><code>EventCard.java</code></td><td>Tek olay kartı verisi</td></tr>
+  <tr><td><code>StatDelta.java</code></td><td>Bir seçimin stat değişimleri</td></tr>
+  <tr><td><code>EventCardLoader.java</code></td><td><code>event_cards.cards</code> dosyasını okur</td></tr>
+  <tr><td><code>EventCardDeck.java</code></td><td>Kartları rastgele sırayla verir</td></tr>
+  <tr><td><code>GameAudio.java</code></td><td>WAV ses (masaüstü, JDK <code>Clip</code> — Win/Linux)</td></tr>
+  <tr><td><code>assets/</code></td><td>Resimler, font, ses, kart dosyası</td></tr>
+  <tr><td><code>androidPort/</code></td><td>Aynı oyunun Android sürümü (ayrı proje)</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 3 ═══ -->
+<section id="akis">
+<h2>3. Oyun akışı — veri ve ekran</h2>
+<h3>3.1 Statlar nasıl değişir?</h3>
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+  participant UI as PetCreationApp
+  participant M as PetGameModel
+  participant Cards as event_cards.cards
+  UI->>Cards: Kart listesi yüklü
+  UI->>M: applyChoice(StatDelta)
+  M->>M: hunger/affection/weight/health += delta
+  M->>M: applyTimePassage (her tur)
+  M->>M: evaluateLossConditions
+  M-->>UI: isGameOver / yeni statlar
+  UI->>UI: Çubukları ve sprite'ı yenile
+</pre>
+</div>
+<h3>3.2 Sprite (görüntü) nasıl seçilir?</h3>
+<p>Kilo ve sevgiye göre farklı PNG dosyası yolu üretilir:</p>
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  W[Kilo] --> W1{&lt; 35?}
+  W1 -->|Evet| Skinny[skinny body]
+  W1 -->|Hayır| W2{&gt; 65?}
+  W2 -->|Evet| Fat[fat body]
+  W2 -->|Hayır| Normal[normal body]
+  A[Sevgi] --> A1{&lt; 35?}
+  A1 -->|Evet| Sad[sad face]
+  A1 -->|Hayır| A2{&gt; 65?}
+  A2 -->|Evet| Happy[happy face]
+  A2 -->|Hayır| FaceN[normal face]
+</pre>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 4 ═══ -->
+<section id="dosyalar">
+<h2>4. Java dosyaları — ne işe yarar?</h2>
+
+<!-- ──── 4.1 StatDelta ──── -->
+<h3>4.1 <code>StatDelta.java</code></h3>
+<p>Bir seçimin dört sayıya etkisini taşır. Kart dosyasında yazılmayan stat 0 kabul edilir.</p>
+<pre>public final class StatDelta {
+    public final int hunger;
+    public final int affection;
+    public final int weight;
+    public final int health;
+    public static final StatDelta ZERO = new StatDelta(0, 0, 0, 0);
+}</pre>
+
+<h4>ZERO ne işe yarar?</h4>
+<p><code>ZERO</code>, "hiçbir stat'ı değiştirme" anlamına gelen hazır bir sabittir.
+Kart dosyasında bir kartın <code>yes</code> veya <code>no</code> satırı eksikse, loader her seferinde
+<code>new StatDelta(0, 0, 0, 0)</code> yaratmak yerine mevcut <code>StatDelta.ZERO</code> nesnesini kullanır.
+Bunu şöyle düşünün: "boş bir paket" önceden hazır durur — ihtiyaç olduğunda hep aynı kutu kullanılır,
+gereksiz yere yeni kutu üretmeyiz. Buna <strong>sabit nesne (constant object)</strong> denir.</p>
+
+<div class="note">
+<strong>Programlama terimi — <code>public static final</code>:</strong>
+<code>public</code> = herkes erişebilir,
+<code>static</code> = sınıfın kendisine ait (bir kopya, her nesneye değil),
+<code>final</code> = bir kez atandıktan sonra değiştirilemez.
+Bu üçlü bir araya gelince ortaya "herkes tarafından kullanılabilen, değişmez sabit" çıkar.
+</div>
+
+<!-- ──── 4.2 EventCard ──── -->
+<h3>4.2 <code>EventCard.java</code></h3>
+<p>Tek kart: kimlik (<code>id</code>), olay metni, Evet/Hayır için iki <code>StatDelta</code>.
+Getter metotları (<code>getId()</code>, <code>getText()</code> …) alanları dışarı açar ama değiştirmeyi engeller —
+buna <strong>encapsulation (kapsülleme)</strong> denir.</p>
+
+<!-- ──── 4.3 PetGameModel ──── -->
+<h3>4.3 <code>PetGameModel.java</code></h3>
+<p>Oyunun "beyni". Stat değişimlerini, zaman geçişini ve kaybetme koşullarını yönetir.</p>
+
+<h4><code>Path</code> nedir?</h4>
+<p>Java'nın <code>java.nio.file.Path</code> sınıfı, bilgisayardaki bir dosya ya da klasör adresini temsil eder.
+Bunu "bir yol tarifi kağıdı" gibi düşünün: dosyayı henüz açmaz, sadece <em>nerede</em> olduğunu bilir.</p>
+<pre>Path partsRoot = Paths.get("assets", "parts");
+// → assets/parts</pre>
+<p>Dosyayı gerçekten okumak için başka metotlar (<code>Files.newInputStream</code>, <code>ImageIO.read</code>) kullanılır.
+<code>Path</code> tek başına bir adres kartıdır — içindekilere dokunmaz.</p>
+
+<h4><code>enum</code> nedir?</h4>
+<p>Enum (enumeration = sayım), sınırlı sayıda seçenek tanımlar. Bir değişken bu seçeneklerden <strong>yalnızca birini</strong>
+tutabilir — başka bir değer atanamaz. Bunu "tek bir soru için önceden hazırlanmış şıklar" gibi düşünün.</p>
+<pre>public enum GameOverReason {
+    NONE,       // henüz bitmedi
+    OBESITY,    // aşırı kiloyuzünden
+    STARVATION, // açlıktan
+    LEFT_HOME   // sevgi bitince
+}</pre>
+<p>String ("OBESITY") yazmak yerine enum kullanmanın avantajı: yazım hatası yaparsanız derleyici sizi daha kodunuzu
+çalıştırmadan uyarır. Enum değerleri sabit ve güvenlidir.</p>
+
+<h4><code>private GameOverReason gameOverReason = GameOverReason.NONE;</code></h4>
+<p>Bu satır şunu söyler: "Oyun başladığında henüz kaybetme sebebi yok."
+<code>private</code> kelimesi bu değişkene sadece <code>PetGameModel</code> sınıfının kendi kodunun
+erişebileceğini bildirir. Oyun bittiğinde bu alan <code>OBESITY</code>, <code>STARVATION</code>
+veya <code>LEFT_HOME</code> değerlerinden birini alır — o zaman ekranda uygun mesaj gösterilir.</p>
+
+<h4>İsim temizleme (üçlü operatör)</h4>
+<pre>String trimmed = petName == null ? "" : petName.trim();
+this.petName = trimmed.isEmpty() ? "Pet" : trimmed;</pre>
+<p>Bu iki satır, kullanıcının yazdığı ismi güvenli hale getirir:</p>
+<ol>
+  <li><code>petName == null ? "" : petName.trim()</code> — isim hiç girilmediyse (<code>null</code>) boş metin kullan;
+      girildiyse baştaki ve sondaki boşlukları temizle (<code>trim()</code>). <code>? :</code> yapısına
+      <strong>üçlü (ternary) operatör</strong> denir; kısa bir <em>if-else</em>'dir.</li>
+  <li>Temizlenmiş isim hâlâ boşsa varsayılan olarak <code>"Pet"</code> kullan.</li>
+</ol>
+<p>Böylece oyuncu hiçbir şey yazmasa bile model geçerli bir isme sahip olur.</p>
+
+<h4><code>resolveBodyPath</code> — dosya yolu birleştirme</h4>
+<pre>Path base = partsRoot.resolve("bodies").resolve(idStr);
+if (weight &lt; WEIGHT_SKINNY) {
+    return base.resolve("skinny").resolve("body" + bodyStyleId + "S.png");
+}
+if (weight &gt; WEIGHT_FAT) {
+    return base.resolve("fat").resolve("body" + bodyStyleId + "F.png");
+}
+return base.resolve("normal").resolve("body" + bodyStyleId + ".png");</pre>
+<p>Burada iki önemli kavram var:</p>
+<ul>
+  <li><strong><code>base</code></strong> — temel yol. Kök klasörden (<code>assets/parts</code>) başlayıp
+      <code>bodies/1</code> gibi bir klasöre kadar inen adres. Bir nevi "şehir" adresi.</li>
+  <li><strong><code>resolve</code></strong> — bu adresin sonuna bir alt klasör veya dosya adı ekler.
+      <code>base.resolve("skinny")</code> → <code>assets/parts/bodies/1/skinny</code>.
+      Bunu "adrese sokak numarası eklemek" gibi düşünün.</li>
+</ul>
+<p>Bu fonksiyon, pet'in kilosuna göre hangi vücut resminin gösterileceğini belirler.
+Zayıfsa skinny, şişmansa fat, normaldeyse normal klasöründen dosya yolunu döndürür.</p>
+
+<p>Önemli sabitler:</p>
+<ul>
+  <li><code>WEIGHT_SKINNY = 35</code>, <code>WEIGHT_FAT = 65</code> — hangi vücut resmi?</li>
+  <li><code>AFFECTION_SAD / HAPPY</code> — hangi yüz resmi?</li>
+  <li>Her tur: açlık +3, kilo −2, sevgi −1; aşırı kiloda sağlık −2</li>
+</ul>
+<pre>public void applyChoice(StatDelta delta) {
+    hunger = clamp(hunger + delta.hunger);
+    // ... diğer statlar
+    applyTimePassage();
+}</pre>
+<p><code>clamp</code> değeri 0–100 arasında tutar — taşma olmaz.</p>
+
+<!-- ──── 4.4 PetSpriteComposer ──── -->
+<h3>4.4 <code>PetSpriteComposer.java</code></h3>
+<p>Sprite (oyundaki küçük karakter resmi) oluşturmaktan sorumludur. Ayrı ayrı çizilmiş bacak, gövde, yüz ve şapka
+parçalarını üst üste koyarak tek bir görüntü üretir.</p>
+
+<h4><code>BufferedImage</code> nedir?</h4>
+<p>Java'nın <code>java.awt.image.BufferedImage</code> sınıfı, bellekteki bir resmi temsil eder.
+Bunu dijital bir tuval (canvas) gibi düşünün: piksel piksel renk bilgisi içerir. PNG dosyasını
+<code>ImageIO.read</code> ile okuduğunuzda elde ettiğiniz şey bir <code>BufferedImage</code>'dir.</p>
+<pre>BufferedImage out = new BufferedImage(16, 48, BufferedImage.TYPE_INT_ARGB);</pre>
+<p>Bu satır 16 piksel genişliğinde, 48 piksel yüksekliğinde boş bir tuval oluşturur.
+<code>TYPE_INT_ARGB</code> her pikselin alfa (saydamlık), kırmızı, yeşil, mavi kanalı
+olduğunu belirtir.</p>
+
+<h4><code>Graphics2D</code> nedir ve grafik nasıl çizilir?</h4>
+<p><code>Graphics2D</code>, Java'nın çizim kalemini temsil eder. Bir <code>BufferedImage</code> üzerine
+şekil çizmek, metin yazmak veya başka bir resmi yapıştırmak istediğinizde bu nesneyi kullanırsınız.</p>
+<pre>Graphics2D g = out.createGraphics();  // tuvalden kalem al
+drawAt(g, leg, 0, 32);               // bacakları y=32'ye çiz
+drawAt(g, body, 0, 16);              // gövdeyi y=16'ya çiz
+drawAt(g, face, 0, 16);              // yüzü y=16'ya çiz
+drawAt(g, hat, 0, 0);                // şapkayı en üste çiz
+g.dispose();                          // kalemi bırak</pre>
+<p>Her <code>drawAt</code> çağrısı, ilgili PNG dosyasını okuyup belirtilen koordinata yapıştırır.
+Parçalar alttan üste sırayla çizildiğinden üstteki katman alttakini kaplar — tıpkı kağıtları
+üst üste koymak gibi.</p>
+<p>Sonunda elde edilen <code>BufferedImage</code> ekrandaki panele <code>g2.drawImage</code> ile çizilir
+ve kullanıcı birleşik sprite'ı görür. <code>dispose()</code> çağrısı kalemi serbest bırakır — kullanılmayan
+kaynakları temizlemek iyi bir alışkanlıktır.</p>
+
+<!-- ──── 4.5 EventCardLoader ──── -->
+<h3>4.5 <code>EventCardLoader.java</code></h3>
+<p><code>event_cards.cards</code> dosyasını satır satır okuyup kart listesi üretir. Her kart şu formattadır:</p>
+<pre>card empty_bowl
+text
+The food bowl is empty...
+yes hunger=-14 affection=3 weight=6
+no hunger=6 affection=-6
+end</pre>
+<p><code>#</code> ile başlayan satırlar ve boş satırlar yok sayılır.</p>
+
+<h4><code>StringBuilder</code> nedir?</h4>
+<p>Java'da <code>String</code> (metin) nesneleri değiştirilemezdir — bir metne her ekleme yaptığınızda
+aslında yeni bir metin oluşur. Az sayıda ekleme için sorun olmaz, ama kart metnini satır satır
+birleştirirken çok fazla gereksiz kopya üretilir.</p>
+<p><code>StringBuilder</code>, değiştirilebilen bir metin kutusudur. İçine <code>.append()</code> ile
+parça parça ekleme yaparsınız — kutu büyür ama her seferinde yeni bir kutu oluşmaz.
+En sonunda <code>.toString()</code> ile bitmiş metni alırsınız.</p>
+<pre>StringBuilder text = new StringBuilder();
+// "text" satırı okunduğunda yeni kutu oluşur
+
+// sonraki her satır kutuya eklenir:
+text.append('\n');    // yeni satır karakteri
+text.append(line);    // satırın kendisi
+
+// "end" satırına gelince bitmiş metni al:
+String sonuc = text.toString();</pre>
+<p>Böylece olay metni satır satır birleştirilip <code>EventCard</code> nesnesine verilir.</p>
+
+<h4><code>parseDelta</code> ne işe yarar?</h4>
+<p><code>yes</code> veya <code>no</code> satırını okuyup <code>StatDelta</code> nesnesine çevirir. Örnek satır:</p>
+<pre>yes hunger=-14 affection=3 weight=6</pre>
+<p>Fonksiyon şunları yapar:</p>
+<ol>
+  <li><code>"yes"</code> önekinden sonraki kısmı (<code>hunger=-14 affection=3 weight=6</code>) alır.</li>
+  <li>Boşluklardan parçalara ayırır: <code>["hunger=-14", "affection=3", "weight=6"]</code>.</li>
+  <li>Her parçayı <code>=</code> işaretinden ikiye böler: isim (<code>hunger</code>) ve değer (<code>-14</code>).</li>
+  <li>İsme göre doğru değişkene atar (<code>switch</code> ile).</li>
+  <li>Yazılmayan statlar 0 kalır (ör. <code>health</code> yukarıda yok → 0).</li>
+</ol>
+<pre>private static StatDelta parseDelta(String rest) {
+    int hunger = 0, affection = 0, weight = 0, health = 0;
+    for (String token : rest.split("\\s+")) {
+        int eq = token.indexOf('=');
+        int v = Integer.parseInt(token.substring(eq + 1));
+        switch (token.substring(0, eq)) {
+            case "hunger": hunger = v; break;
+            // ...
+        }
+    }
+    return new StatDelta(hunger, affection, weight, health);
+}</pre>
+
+<!-- ──── 4.6 EventCardDeck ──── -->
+<h3>4.6 <code>EventCardDeck.java</code></h3>
+<p>Kartları rastgele çeker; mümkünse <strong>üst üste aynı kartı</strong> vermez.</p>
+
+<h4><code>List</code> nedir?</h4>
+<p><code>List</code>, Java'da sıralı bir eleman koleksiyonudur — tıpkı bir alışveriş listesi gibi.
+Her elemanın bir sırası (indeksi) vardır ve istediğiniz zaman sıradaki elemana
+<code>.get(indeks)</code> ile ulaşabilirsiniz.</p>
+<pre>List&lt;EventCard&gt; cards = new ArrayList&lt;&gt;();
+cards.add(birKart);      // listeye ekle
+cards.get(0);            // ilk elemanı al
+cards.size();            // listede kaç eleman var</pre>
+<p><code>&lt;EventCard&gt;</code> kısmı "bu listenin elemanları <code>EventCard</code> tipindedir" demektir.
+Buna <strong>generic (tür parametresi)</strong> denir — listeye yanlışlıkla başka türde nesne koymanızı önler.</p>
+
+<h4><code>drawNext</code> nasıl çalışır?</h4>
+<pre>public EventCard drawNext() {
+    if (cards.size() == 1) {
+        lastDrawn = cards.get(0);
+        return lastDrawn;
+    }
+    EventCard next;
+    do {
+        next = cards.get(random.nextInt(cards.size()));
+    } while (next == lastDrawn);
+    lastDrawn = next;
+    return next;
+}</pre>
+<p>Adım adım:</p>
+<ol>
+  <li>Tek kart varsa onu döndürür (başka seçenek yok).</li>
+  <li>Birden fazla kart varsa: rastgele bir kart seç.</li>
+  <li>Seçilen kart bir öncekiyle aynıysa (<code>next == lastDrawn</code>), tekrar seç.</li>
+  <li>Bu <code>do-while</code> döngüsü farklı bir kart bulunana kadar devam eder.</li>
+  <li>Bulunan kartı <code>lastDrawn</code> olarak kaydet ve döndür.</li>
+</ol>
+<p>Bu basit "tekrar önleme" yöntemi, oyuncunun art arda aynı soruyu görmesini engeller.
+44 kart olduğunda döngü genellikle 1–2 denemede farklı bir kart bulur.</p>
+
+<!-- ──── 4.7 PetCreationApp ──── -->
+<h3>4.7 <code>PetCreationApp.java</code></h3>
+<p>Projenin en büyük dosyası. İki ekran arasında geçiş yapar (<code>CardLayout</code>):
+<code>creation</code> (oluşturma) ve <code>game</code> (oyun). Aşağıda bu dosyadaki temel
+kavramları tek tek açıklıyoruz.</p>
+
+<h4>Import'lar — neden bu kadar çok satır?</h4>
+<p>Java'da bir sınıfı kullanmadan önce nereden geldiğini söylemeniz gerekir. Her <code>import</code>
+satırı, "bu ismi kullanacağım, şu paketten al" demektir. Gruplar halinde bakalım:</p>
+<table>
+  <tr><th>Import grubu</th><th>Ne sağlar?</th></tr>
+  <tr><td><code>java.awt.*</code></td><td>Temel grafik: renk, font, boyut, çizim, fare olayları. AWT, Java'nın en eski arayüz katmanıdır.</td></tr>
+  <tr><td><code>java.awt.event.*</code></td><td>Fare tıklaması, pencere kapanması gibi olayları yakalayan sınıflar.</td></tr>
+  <tr><td><code>java.awt.image.BufferedImage</code></td><td>Bellekteki piksel tabanlı resim.</td></tr>
+  <tr><td><code>java.io.*</code></td><td>Dosya okuma/yazma hata sınıfları (<code>IOException</code>, <code>InputStream</code>).</td></tr>
+  <tr><td><code>java.nio.file.*</code></td><td>Modern dosya yolları (<code>Path</code>, <code>Files</code>, <code>DirectoryStream</code>).</td></tr>
+  <tr><td><code>java.util.*</code></td><td>Koleksiyonlar (<code>List</code>, <code>ArrayList</code>, <code>Collections</code>) ve regex.</td></tr>
+  <tr><td><code>javax.imageio.ImageIO</code></td><td>PNG/JPEG dosyalarını <code>BufferedImage</code>'e çevirir.</td></tr>
+  <tr><td><code>javax.swing.*</code></td><td>Arayüz bileşenleri: pencere (<code>JFrame</code>), panel (<code>JPanel</code>), etiket (<code>JLabel</code>), metin kutusu (<code>JTextField</code>), kaydırılabilir alan (<code>JScrollPane</code>) ve daha fazlası.</td></tr>
+</table>
+
+<h4><code>initComponentFonts</code> — bileşenleri hazırla</h4>
+<pre>private void initComponentFonts(Font base) {
+    eventCardFont = base.deriveFont(Font.PLAIN, FONT_EVENT);
+    statsFont = base.deriveFont(Font.PLAIN, FONT_STATS);
+    arrowFont = base.deriveFont(Font.BOLD, FONT_ARROW);
+    eventCardText.setContentType("text/html");
+    eventCardText.setEditable(false);
+    eventCardText.setOpaque(false);
+    eventCardText.setBorder(null);
+    eventCardText.setFocusable(false);
+    eventCardText.setFont(eventCardFont);
+    styleCozyTextField(petNameField, base);
+}</pre>
+<p>Buradaki metotlar:</p>
+<ul>
+  <li><code>deriveFont</code> — mevcut fontun farklı boyut/stilini türetir. "Aynı yazı tipi ama 28pt" gibi.</li>
+  <li><code>setContentType("text/html")</code> — metin alanına "içerik HTML formatında" der; böylece
+      kalın yazı, renk gibi biçimlendirme kullanılabilir.</li>
+  <li><code>setEditable(false)</code> — kullanıcı bu alana yazamasın; sadece görüntüleme.</li>
+  <li><strong><code>setOpaque(false)</code></strong> — bileşenin arka planını <em>saydam</em> yapar. <code>true</code> olursa
+      bileşen kendi arka plan rengini çizer; <code>false</code> olursa altındaki panelin rengi görünür.</li>
+  <li><strong><code>setBorder(null)</code></strong> — bileşenin etrafındaki çerçeveyi kaldırır. Normalde metin alanları
+      bir kenarlıkla gelir; <code>null</code> ile "çerçeve istemiyorum" deriz.</li>
+  <li><code>setFocusable(false)</code> — klavye odağı bu bileşene geçmesin (tıklanınca mavi kenarlık göstermesin).</li>
+</ul>
+
+<h4><code>JTextField</code> (metin kutusu) ve alt ayarları</h4>
+<p><code>JTextField</code>, kullanıcının tek satır metin yazabildiği kutudur — bizde pet'in isim alanı.
+Kutuyu biçimlendiren tipik metotlar:</p>
+<ul>
+  <li><code>setBackground(renk)</code> — kutunun arka plan rengi.</li>
+  <li><code>setForeground(renk)</code> — yazılan metnin rengi.</li>
+  <li><strong><code>setCaretColor(renk)</code></strong> — imlecin (yanıp sönen dikey çizgi) rengi.
+      Koyu arka plana beyaz imleç koymak gibi, kutu rengine uyumlu olması için ayarlanır.</li>
+  <li><code>setFont(font)</code> — kutudaki metnin yazı tipi.</li>
+</ul>
+
+<h4><code>BorderFactory</code> nedir?</h4>
+<p><code>BorderFactory</code>, bileşenlerin etrafına çeşitli çerçeveler üreten fabrika sınıfıdır.
+"Bana şu tarzda bir kenarlık ver" dersiniz, o da size hazır bir nesne döndürür.</p>
+<pre>// İnce çizgi kenarlık (renk, kalınlık, yuvarlatılmış köşe)
+BorderFactory.createLineBorder(COZY_BORDER, 1, true)
+
+// İç boşluk kenarlığı (üst, sol, alt, sağ piksel)
+BorderFactory.createEmptyBorder(10, 12, 10, 12)
+
+// İkisini birleştir: dışta çizgi, içte boşluk
+BorderFactory.createCompoundBorder(çizgi, boşluk)
+
+// Başlıklı kenarlık: çerçevenin üstünde küçük bir etiket
+BorderFactory.createTitledBorder(çizgi, "Event")</pre>
+<p>Bu yapılar <code>setBorder()</code> ile bileşene atanır. CSS'teki <code>border</code> ve
+<code>padding</code> kavramlarına benzer.</p>
+
+<h4><code>showFrame</code> ve <code>JFrame</code> yapısı</h4>
+<pre>private void showFrame() {
+    initComponentFonts(baseFont);
+    mainFrame = new JFrame("Virtual pet");
+    mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    // ...
+    JPanel root = new JPanel(new BorderLayout());
+    root.add(cards, BorderLayout.CENTER);
+    mainFrame.setContentPane(root);
+    mainFrame.pack();
+    mainFrame.setLocationRelativeTo(null);
+    mainFrame.setVisible(true);
+}</pre>
+<p><code>JFrame</code>, masaüstü uygulamanın ana penceresidir — başlık çubuğu, kapatma düğmesi olan kare.
+İçine bileşenler eklenir ve sonunda gösterilir:</p>
+<ol>
+  <li><code>new JFrame("Virtual pet")</code> — başlık yazılı boş bir pencere oluşturur.</li>
+  <li><code>setDefaultCloseOperation(EXIT_ON_CLOSE)</code> — kapatma düğmesine basılınca program kapansın.</li>
+  <li><code>setContentPane(root)</code> — pencerenin içeriğini ayarlar (tüm panellerin kök kabı).</li>
+  <li><code>pack()</code> — pencere boyutunu içindeki bileşenlere göre otomatik hesaplar.</li>
+  <li><code>setLocationRelativeTo(null)</code> — pencereyi ekranın ortasına yerleştirir.</li>
+  <li><code>setVisible(true)</code> — pencereyi görünür yapar. Bu çağrılmadan pencere gizli kalır.</li>
+</ol>
+
+<h4><code>JPanel</code>, <code>FlowLayout</code> ve <code>setAlignmentX</code></h4>
+<p><strong><code>JPanel</code></strong>, Swing'de dikdörtgen bir "kutu" dur. İçine başka bileşenler koyarsınız.
+Bunu bir kargo kutusu gibi düşünün: kutunun kendisi görünmez olabilir, ama içindeki eşyaları düzenler.</p>
+
+<p><strong>Layout (düzen yöneticisi)</strong>, panel içindeki bileşenlerin nasıl dizileceğini belirler.
+Her panelin bir layout'u vardır:</p>
+<table>
+  <tr><th>Layout</th><th>Ne yapar?</th><th>Kullanıldığı yer</th></tr>
+  <tr><td><code>BorderLayout</code></td><td>Beş bölge: NORTH, SOUTH, EAST, WEST, CENTER</td><td>Ana pencere, oyun kartı</td></tr>
+  <tr><td><code>FlowLayout</code></td><td>Bileşenleri soldan sağa (veya ortalı) yan yana dizer</td><td>Yes/No butonları, ok satırları</td></tr>
+  <tr><td><code>BoxLayout</code></td><td>Bileşenleri dikey veya yatay sıraya dizer</td><td>Oluşturma paneli, parça satırları</td></tr>
+  <tr><td><code>CardLayout</code></td><td>Bileşenleri üst üste koyar, sadece birini gösterir</td><td>Oluşturma ↔ oyun geçişi</td></tr>
+</table>
+
+<p><strong><code>setAlignmentX(Component.CENTER_ALIGNMENT)</code></strong> — BoxLayout kullanan bir
+panelde bileşenin yatay hizasını belirler. <code>CENTER_ALIGNMENT</code> = ortala.
+Bu olmadan bazı bileşenler sola yapışır ve görünüm bozulur.</p>
+
+<h4><code>JScrollPane</code> nedir?</h4>
+<p>İçindeki bileşen panelden büyükse kaydırma çubuğu ekleyen bir sarmalayıcıdır. Bizde olay metni
+uzun olduğunda dikey kaydırma çubuğu belirir:</p>
+<pre>JScrollPane eventScroll = new JScrollPane(eventCardText);
+eventScroll.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
+eventScroll.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);</pre>
+<p>"Yatay kaydırma asla gösterme, dikey kaydırma gerekirse göster" — metin aşağı uzadığında
+kullanıcı kaydırarak okuyabilir.</p>
+
+<h4>Yazıları panele sığdırma (<code>wrapTextToLines</code>)</h4>
+<p>Olay kartı metni panelden geniş olabilir. Metni satırlara bölme işlemi şöyle çalışır:</p>
+<ol>
+  <li>Metin boşluklardan kelimelere ayrılır.</li>
+  <li>Her kelime mevcut satıra eklenir. Eklenen kelimeyle birlikte satır panelden taşıyorsa,
+      kelime yeni satıra geçer.</li>
+  <li>Tek bir kelime bile panelden genişse, kelime harf harf bölünür.</li>
+</ol>
+<p>Ölçüm <code>FontMetrics.stringWidth(metin)</code> ile yapılır: "bu metin şu fontta kaç piksel genişliğinde?"
+sorusuna cevap verir. Böylece her satır panel genişliğini aşmaz.</p>
+<p>Uzun olay metinleri için font boyutu da karakter sayısına göre küçültülür
+(<code>eventFontSizeFor</code>): 40 karakterden kısaysa 25pt, 115'ten uzunsa 15pt gibi.</p>
+
+<h4>Diğer önemli kavramlar</h4>
+<table>
+  <tr><th>Kavram / Metot</th><th>Ne yapar?</th></tr>
+  <tr><td><code>Cursor.HAND_CURSOR</code></td><td>Fare imlecini "el" şekline çevirir — tıklanabilir olduğunu gösterir.</td></tr>
+  <tr><td><code>MouseAdapter</code></td><td>Fare olaylarını dinler. <code>mouseClicked</code> metodunu override ederek tıklama tepkisi verirsiniz.</td></tr>
+  <tr><td><code>SwingUtilities.invokeLater</code></td><td>Swing bileşenleri tek bir iş parçacığında (thread) çalışır. Bu metot, kodunuzu o iş parçacığına güvenli şekilde gönderir.</td></tr>
+  <tr><td><code>repaint()</code></td><td>Bileşene "kendini yeniden çiz" der. Stat çubukları değişince veya sprite güncellenince çağrılır.</td></tr>
+  <tr><td><code>paintComponent(Graphics g)</code></td><td>Bileşenin kendini çizdiği metot. Override ederek özel çizim yaparsınız (stat çubukları, sprite önizleme).</td></tr>
+  <tr><td><code>Dimension</code></td><td>Genişlik + yükseklik çifti. <code>setPreferredSize</code>, <code>setMaximumSize</code> gibi metotlarla bileşen boyutunu belirler.</td></tr>
+  <tr><td><code>Color</code></td><td>RGB renk nesnesi. <code>new Color(255, 244, 190)</code> = açık sarı.</td></tr>
+  <tr><td><code>Runnable</code></td><td>Tek bir <code>run()</code> metodu olan arayüz. Lambda ile <code>() -&gt; cycleHat(1)</code> gibi kullanılır — "bu kodu daha sonra çalıştır" demektir.</td></tr>
+  <tr><td><code>lambda (->)</code></td><td>Kısa fonksiyon tanımı. <code>() -&gt; startGame()</code> = "çağrıldığında startGame'i çalıştır".</td></tr>
+  <tr><td><code>RenderingHints</code></td><td>Çizim kalitesi ayarları. <code>NEAREST_NEIGHBOR</code> piksel sanatını keskin tutar; <code>BILINEAR</code> arka planı yumuşatır.</td></tr>
+  <tr><td><code>@Override</code></td><td>Üst sınıftan gelen bir metodu yeniden yazdığınızı derleyiciye bildirir. Yazım hatası yaparsanız uyarı alırsınız.</td></tr>
+  <tr><td><code>inner class</code></td><td><code>CreationPreviewPanel</code>, <code>GamePreviewPanel</code>, <code>StatBarsPanel</code> gibi sınıflar <code>PetCreationApp</code> içinde tanımlanmıştır. Dış sınıfın değişkenlerine doğrudan erişebilirler.</td></tr>
+</table>
+
+<!-- ──── 4.8 GameAudio ──── -->
+<h3>4.8 <code>GameAudio.java</code></h3>
+<p>Masaüstünde <code>assets/*.wav</code> dosyalarını Java'nın yerleşik ses API'si
+(<code>javax.sound.sampled</code>, <code>Clip</code>) ile çalar. Harici program (mpv vb.) gerekmez;
+Windows ve Linux'ta aynı kod çalışır.</p>
+<ul>
+  <li><code>bg.wav</code> — <code>Clip.loop(LOOP_CONTINUOUSLY)</code> ile arka plan müziği</li>
+  <li><code>tap.wav</code>, <code>death.wav</code>, <code>runaway.wav</code> — tek seferlik efektler</li>
+</ul>
+<p>Android sürümü hâlâ APK içindeki MP3 ve <code>MediaPlayer</code> kullanır; masaüstüyle dosya formatı farklı olabilir.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 5 ═══ -->
+<section id="kavramlar">
+<h2>5. Java ve Swing kavramları — ek sözlük</h2>
+<p>Projede karşınıza çıkabilecek terimler:</p>
+<table>
+  <tr><th>Terim</th><th>Açıklama</th></tr>
+  <tr><td><code>class</code> (sınıf)</td><td>İlgili veri ve fonksiyonları bir arada tutan şablon. <code>PetGameModel</code> sadece oyun kurallarını bilir; ekranı bilmez.</td></tr>
+  <tr><td><code>final</code></td><td>Değişkende: "bir kez atandıktan sonra değişmez". Sınıfta: "miras alınamaz". Metotta: "override edilemez".</td></tr>
+  <tr><td><code>private</code></td><td>Sadece aynı sınıf içinden erişilebilir. Dış dünya bu değişkeni/metodu göremez.</td></tr>
+  <tr><td><code>static</code></td><td>Nesneye değil sınıfın kendisine ait. <code>StatDelta.ZERO</code> derken bir nesne oluşturmadan erişirsiniz.</td></tr>
+  <tr><td><code>this</code></td><td>"Şu anki nesne" demektir. <code>this.petName = ...</code> nesnenin kendi <code>petName</code> alanına yazar.</td></tr>
+  <tr><td><code>null</code></td><td>"Hiçbir şey"e işaret eden özel değer. Bir değişken henüz bir nesneye atanmamışsa <code>null</code>'dır.</td></tr>
+  <tr><td><code>try-catch</code></td><td>Hata olabilecek kodu <code>try</code> bloğuna, hatayı yakalayacak kodu <code>catch</code> bloğuna koyarsınız.</td></tr>
+  <tr><td><code>throws</code></td><td>Bir metodun belirli bir hata fırlatabileceğini bildirir; çağıran taraf bu hatayı yakalamalıdır.</td></tr>
+  <tr><td><code>interface</code></td><td>Bir sözleşme: "bu metotları uygulayacağına söz ver." <code>Runnable</code> bir interface'dir.</td></tr>
+  <tr><td><code>Collections.unmodifiableList</code></td><td>Listeyi değiştirilemez (sadece okunur) yapar. <code>EventCardDeck</code> bunu kullanır — kartlar sonradan eklenemez/silinemez.</td></tr>
+  <tr><td><code>BufferedReader</code></td><td>Dosyayı satır satır verimli okuyan sınıf. <code>readLine()</code> her çağrıda bir satır döndürür.</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 6 ═══ -->
+<section id="algoritmalar">
+<h2>6. Temel algoritmalar (başlangıç seviyesi)</h2>
+
+<h3>6.1 <code>clamp</code> — sınırlama</h3>
+<p>Değeri minimum ve maksimum arasında tutar.</p>
+<pre>private static int clamp(int v) {
+    if (v &lt; 0) return 0;
+    if (v &gt; 100) return 100;
+    return v;
+}</pre>
+
+<h3>6.2 <code>floorMod</code> — döngüsel indeks</h3>
+<p>Şapka listesinde 3. öğeden sonra 1. öğeye dönmek için:</p>
+<pre>hatIndex = floorMod(hatIndex + delta, hatPaths.size());</pre>
+<p>Negatif <code>delta</code> ile geri gidebilirsiniz; Java'nın <code>%</code> operatörü negatifte
+farklı davranabilir, bu yüzden özel bir yardımcı kullanılır.</p>
+
+<h3>6.3 Kelime kaydırma (<code>wrapTextToLines</code>)</h3>
+<ol>
+  <li>Metni boşluklardan kelimelere böl.</li>
+  <li>Her kelimeyi satıra ekle; sığmazsa yeni satır.</li>
+  <li>Çok uzun kelime varsa harf harf böl.</li>
+</ol>
+<p>Android'de benzer mantık <code>Paint.measureText</code> ile yapılır.</p>
+
+<h3>6.4 Kart dosyası okuma</h3>
+<ol>
+  <li><code>card &lt;id&gt;</code> ile yeni kart başlar.</li>
+  <li><code>text</code> sonrası satırlar olay metnidir (ilk <code>yes</code> / <code>no</code> / <code>end</code> satırına kadar).</li>
+  <li><code>yes</code> ve <code>no</code> satırlarındaki <code>stat=değer</code> çiftleri <code>StatDelta</code> yapar.</li>
+  <li><code>end</code> kartı listeye ekler.</li>
+</ol>
+</section>
+
+<!-- ═══════════════════════════════════════════ 7 ═══ -->
+<section id="kutuphaneler">
+<h2>7. Kullanılan kütüphaneler ve API'ler</h2>
+<table>
+  <tr><th>Teknoloji</th><th>Nerede?</th><th>Ne için?</th></tr>
+  <tr><td>Java Swing</td><td>Masaüstü UI</td><td>Pencere, panel, metin kutusu, etiket, kaydırma alanı</td></tr>
+  <tr><td><code>java.awt.Graphics2D</code></td><td>Önizleme panelleri, stat çubukları</td><td>Arka plan + sprite + çubuk çizimi</td></tr>
+  <tr><td><code>javax.imageio.ImageIO</code></td><td>PNG yükleme</td><td><code>assets/parts/...</code></td></tr>
+  <tr><td><code>java.nio.file</code></td><td>Dosya yolları</td><td>Parça klasörlerini tarama, kart dosyası okuma</td></tr>
+  <tr><td><code>CardLayout</code></td><td><code>PetCreationApp</code></td><td>İki tam ekran arasında geçiş</td></tr>
+  <tr><td><code>javax.sound.sampled</code></td><td><code>GameAudio</code></td><td>WAV çalma (Clip), ek kurulum yok</td></tr>
+  <tr><td>Android Activity / View</td><td><code>androidPort</code></td><td>Telefon arayüzü</td></tr>
+  <tr><td><code>MediaPlayer</code></td><td>Android ses</td><td>APK içindeki MP3</td></tr>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 8 ═══ -->
+<section id="ornekler">
+<h2>8. Örnek kod bölümleri</h2>
+
+<h3>8.1 Oyunu başlatma (masaüstü)</h3>
+<pre>private void startGame() {
+    gameModel = new PetGameModel(PARTS, hat, leg, bodyId, faceId, readPetNameFromField());
+    eventDeck = new EventCardDeck(eventCards);
+    gameOverDialogShown = false;
+    hideRestartUi();
+    showNextEvent();
+    cardLayout.show(cards, "game");
+}</pre>
+
+<h3>8.2 Bir seçim işlendiğinde</h3>
+<pre>private void resolveEvent(boolean yes) {
+    StatDelta delta = yes ? currentEvent.getYes() : currentEvent.getNo();
+    gameModel.applyChoice(delta);
+    afterGameStep();
+    if (!gameModel.isGameOver()) {
+        showNextEvent();
+    }
+}</pre>
+
+<h3>8.3 Game over ve ses</h3>
+<pre>GameAudio.stopBgMusic();
+if (reason == LEFT_HOME) {
+    GameAudio.playRunaway(ASSETS);
+} else if (reason == OBESITY || reason == STARVATION) {
+    GameAudio.playDeath(ASSETS);
+}</pre>
+
+<h3>8.4 Play again — tüm SFX durdur</h3>
+<pre>GameAudio.stopSfx();
+GameAudio.startBgMusic(ASSETS);</pre>
+
+<h3>8.5 İsim kişiselleştirme</h3>
+<pre>text.replace("Your pet", name).replace("your pet", name);</pre>
+<p>Kart metninde genel ifade yazılır; oyunda pet adıyla değiştirilir.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 9 ═══ -->
+<section id="android">
+<h2>9. Android port (detaylı)</h2>
+<p><code>androidPort/</code> klasörü, aynı oyun mantığını telefona taşır. Ama telefon ortamı masaüstünden
+çok farklıdır — aşağıda ne değişti ve neden değişti açıklanıyor.</p>
+
+<h3>9.1 Yapısal fark: tek dosya</h3>
+<p>Masaüstünde 8 ayrı Java dosyası var. Android'de bunların hepsi
+<code>VirPetActivity.java</code> içindeki <strong>iç sınıflar (nested/inner class)</strong> olarak yaşar.
+Neden? Android projesi Gradle ile derlenir ve paket yapısı farklıdır; tüm mantığı tek dosyada
+tutmak bağımlılık yönetimini basitleştirir.</p>
+<table>
+  <tr><th>Masaüstü</th><th>Android karşılığı</th></tr>
+  <tr><td><code>StatDelta.java</code></td><td><code>VirPetActivity</code> içinde <code>static final class StatDelta</code></td></tr>
+  <tr><td><code>EventCard.java</code></td><td>İç sınıf <code>EventCard</code></td></tr>
+  <tr><td><code>EventCardDeck.java</code></td><td>İç sınıf <code>EventCardDeck</code></td></tr>
+  <tr><td><code>EventCardLoader.java</code></td><td>İç sınıf <code>EventCardLoader</code></td></tr>
+  <tr><td><code>PetGameModel.java</code></td><td>İç sınıf <code>PetGameModel</code></td></tr>
+  <tr><td><code>PetSpriteComposer.java</code></td><td>İç sınıf <code>PetSpriteComposer</code></td></tr>
+  <tr><td><code>GameAudio.java</code></td><td>İç sınıf <code>GameSounds</code> (MediaPlayer tabanlı)</td></tr>
+</table>
+
+<h3>9.2 Dosya okuma: <code>Path</code> yerine <code>AssetManager</code></h3>
+<p>Masaüstünde dosyalar <code>java.nio.file.Path</code> ve <code>Files</code> ile okunur (işletim sistemi dosya yolları).
+Android'de APK içindeki dosyalara doğrudan dosya yoluyla erişemezsiniz — bunun yerine
+<code>AssetManager</code> kullanılır:</p>
+<pre>// Masaüstü
+BufferedImage img = ImageIO.read(path.toFile());
+
+// Android
+InputStream in = assets.open("parts/bodies/1/normal/body1.png");
+Bitmap img = BitmapFactory.decodeStream(in);</pre>
+<p>Bu yüzden Android'de dosya yolları <code>Path</code> yerine <code>String</code> olarak tutulur.</p>
+
+<h3>9.3 Grafik: <code>BufferedImage</code> yerine <code>Bitmap</code></h3>
+<table>
+  <tr><th>Masaüstü (Java AWT)</th><th>Android</th></tr>
+  <tr><td><code>BufferedImage</code></td><td><code>Bitmap</code></td></tr>
+  <tr><td><code>Graphics2D</code></td><td><code>Canvas</code></td></tr>
+  <tr><td><code>ImageIO.read(file)</code></td><td><code>BitmapFactory.decodeStream(in)</code></td></tr>
+  <tr><td><code>g2.drawImage(img, x, y, null)</code></td><td><code>canvas.drawBitmap(img, x, y, null)</code></td></tr>
+</table>
+<p>Kavram aynı: bellekte bir tuval oluştur, üzerine parçaları çiz, sonucu ekrana göster.
+Sadece sınıf adları Android SDK'ya uygun olarak değişir.</p>
+
+<h3>9.4 Arayüz: Swing yerine Android View'ları</h3>
+<table>
+  <tr><th>Swing (masaüstü)</th><th>Android karşılığı</th><th>Açıklama</th></tr>
+  <tr><td><code>JFrame</code></td><td><code>Activity</code></td><td>Ana ekran / pencere</td></tr>
+  <tr><td><code>JPanel</code></td><td><code>LinearLayout</code> / <code>FrameLayout</code></td><td>Bileşen kabı</td></tr>
+  <tr><td><code>JLabel</code></td><td><code>TextView</code></td><td>Metin gösterici</td></tr>
+  <tr><td><code>JTextField</code></td><td><code>EditText</code></td><td>Yazılabilir metin kutusu</td></tr>
+  <tr><td><code>JScrollPane</code></td><td><code>ScrollView</code></td><td>Kaydırılabilir alan</td></tr>
+  <tr><td><code>CardLayout</code></td><td><code>VISIBLE</code> / <code>GONE</code> değiştirme</td><td>Ekranlar arası geçiş</td></tr>
+  <tr><td><code>FlowLayout</code></td><td><code>LinearLayout (HORIZONTAL)</code></td><td>Yan yana dizme</td></tr>
+  <tr><td><code>BoxLayout (Y_AXIS)</code></td><td><code>LinearLayout (VERTICAL)</code></td><td>Alt alta dizme</td></tr>
+  <tr><td><code>paintComponent</code></td><td><code>onDraw(Canvas)</code></td><td>Özel çizim</td></tr>
+  <tr><td><code>repaint()</code></td><td><code>invalidate()</code></td><td>Yeniden çizmeyi tetikle</td></tr>
+  <tr><td><code>MouseAdapter</code></td><td><code>OnClickListener</code></td><td>Tıklama olayı</td></tr>
+  <tr><td><code>setPreferredSize</code></td><td><code>LayoutParams</code> (dp cinsinden)</td><td>Boyut ayarı</td></tr>
+</table>
+
+<h3>9.5 Ses: <code>ProcessBuilder</code> yerine <code>MediaPlayer</code></h3>
+<p>Masaüstünde Java kendi başına MP3 çalamaz; harici program (mpv) başlatılır.
+Android'in <code>MediaPlayer</code> sınıfı MP3'ü doğrudan çalar — harici programa gerek yoktur.</p>
+<pre>// Masaüstü
+ProcessBuilder pb = new ProcessBuilder("mpv", "--really-quiet", file.toString());
+bgProcess = pb.start();
+
+// Android
+MediaPlayer player = new MediaPlayer();
+AssetFileDescriptor afd = am.openFd("bg.mp3");
+player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+player.setLooping(true);
+player.prepare();
+player.start();</pre>
+
+<h3>9.6 Font yükleme</h3>
+<p>Her iki platformda da <code>assets/</code> kökündeki ilk <code>.ttf</code> / <code>.otf</code> dosyası otomatik bulunur.
+Masaüstünde <code>Font.createFont</code>, Android'de <code>Typeface.createFromAsset</code> kullanılır.
+Font bulunamazsa masaüstünde <code>Font.SANS_SERIF</code>, Android'de <code>Typeface.DEFAULT</code> kullanılır.</p>
+
+<h3>9.7 Boyut birimleri: piksel yerine dp</h3>
+<p>Masaüstünde piksel (px) kullanılır; Android'de <strong>dp (density-independent pixel)</strong> kullanılır.
+dp, farklı ekran yoğunluklarında aynı fiziksel boyutu korur.
+<code>dp(8)</code> yardımcı metodu, dp'yi ekrana uygun piksele çevirir.</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+  subgraph desktop [Masaüstü virPet]
+    Swing[PetCreationApp]
+    Files[assets klasörü]
+  end
+  subgraph android [androidPort]
+    Act[VirPetActivity]
+    ApkAssets[app/src/main/assets]
+  end
+  Files -.kopya.-> ApkAssets
+  Swing -.mantık port.-> Act
+</pre>
+</div>
+<p>Derleme: Android Studio'da <code>androidPort</code> açın → <code>assembleDebug</code>.
+SDK yolu için <code>local.properties</code> içinde <code>sdk.dir</code> kullanın.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 10 ═══ -->
+<section id="calistirma">
+<h2>10. Nasıl çalıştırılır?</h2>
+<h3>Masaüstü</h3>
+<pre>cd virPet
+javac -source 8 -target 8 *.java
+java PetCreationApp</pre>
+<p>Proje kökünden çalıştırın; <code>assets/</code> klasöründe <code>bg.wav</code>, <code>tap.wav</code>,
+<code>death.wav</code>, <code>runaway.wav</code> olmalı. Ses için ek program gerekmez.</p>
+<h3>Android</h3>
+<pre>cd androidPort
+export ANDROID_HOME=~/Android/Sdk
+unset ANDROID_SDK_ROOT
+./gradlew assembleDebug</pre>
+<p>APK: <code>app/build/outputs/apk/debug/app-debug.apk</code></p>
+</section>
+
+</main>
+<footer>
+  VirPet — eğitim amaçlı kod el kitabı. Ana proje: virPet masaüstü; Android: androidPort.
+</footer>
+</body>
+</html>

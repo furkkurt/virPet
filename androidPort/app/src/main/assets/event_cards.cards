@@ -1,0 +1,311 @@
+# virPet event cards — line-oriented format
+# Blank lines and # comments are ignored.
+
+card empty_bowl
+text
+The food bowl is empty. Your pet looks at you with big eyes. Fill it up?
+yes hunger=-14 affection=3 weight=6
+no hunger=6 affection=-6
+end
+
+card morning_run
+text
+A crisp morning. Take your pet for a long run in the park?
+yes hunger=8 affection=2 weight=-8 health=8
+no weight=4 health=-2
+end
+
+card belly_rub
+text
+Your pet rolls over and wiggles. Spend a while giving belly rubs?
+yes hunger=4 affection=14
+no affection=-8
+end
+
+card junk_snacks
+text
+You found leftover treats. Share a handful of salty snacks?
+yes hunger=-8 weight=12 health=-4
+no hunger=3 affection=-3
+end
+
+card vet_visit
+text
+The clinic called with a free check-up slot today. Go in?
+yes hunger=5 affection=-5 health=12
+no weight=2 health=-6
+end
+
+card lazy_day
+text
+Rain taps the window. Curl up on the couch all day?
+yes hunger=6 affection=6 weight=10 health=-3
+no hunger=2 affection=-4
+end
+
+card stranger_pet
+text
+A neighbor wants to pet your companion. Allow it?
+yes affection=5 health=-2
+no hunger=2 affection=-10
+end
+
+card strict_diet
+text
+The scale wobbles. Switch to a strict diet this week?
+yes hunger=10 affection=-6 weight=-12 health=4
+no weight=8 health=-5
+end
+
+card zooomies_midnight
+text
+It's 3 AM. Your pet is sprinting across your face. Lock them out of the bedroom?
+yes affection=-18 health=4
+no hunger=4 affection=8 health=-12
+end
+
+card expensive_gourmet
+text
+A luxury organic pet food brand promises peak fitness, but it tastes terrible. Switch?
+yes hunger=8 affection=-14 weight=-15 health=12
+no weight=6 health=-6
+end
+
+card thunderstorm_panic
+text
+A massive thunderstorm hits. Your pet is shaking under the bed. Force them out to comfort them?
+yes affection=-15 health=-5
+no hunger=2 affection=6 weight=4
+end
+
+card stolen_chocolate
+text
+Oh no! Your companion swiped a dark chocolate bar off the counter. Induce vomiting immediately?
+yes hunger=4 affection=-20 weight=-6 health=8
+no weight=4 health=-25
+end
+
+card work_overtime
+text
+Your boss demands you stay late all week. Work the extra hours for pet toy money?
+yes hunger=12 affection=-16 weight=-5
+no affection=4 health=-4
+end
+
+card grandma_visit
+text
+Grandma is visiting and keeps 'accidentally' dropping entire sausages under the table. Intervene?
+yes affection=-6 weight=-2
+no hunger=-15 weight=22 health=-8
+end
+
+card flea_infestation
+text
+Your pet is scratching like crazy! Apply a harsh, chemical flea treatment?
+yes hunger=2 affection=-15 health=-8
+no affection=-6 weight=-4 health=-18
+end
+
+card dead_mouse_gift
+text
+Your companion proudly brings a dead, dirty rodent to your feet. Praise them?
+yes hunger=-5 affection=16 health=-12
+no affection=-14 health=2
+end
+
+card sofa_scratch
+text
+They are absolutely tearing up your brand new leather sofa. Yell at them to stop?
+yes affection=-16 health=2
+no affection=12 weight=4 health=-4
+end
+
+card spilled_trash
+text
+You come home to a knocked-over trash can. Let them finish scavenging the scraps?
+yes hunger=-16 weight=14 health=-22
+no hunger=8 affection=-12
+end
+
+card laser_pointer_frenzy
+text
+Break out the laser pointer! Play at maximum speed until your pet collapses from exhaustion?
+yes hunger=14 affection=12 weight=-16 health=-10
+no affection=-8 weight=6
+end
+
+card dropped_butter
+text
+Oops! A whole stick of butter slipped off the counter. Push your pet away before they lick it?
+yes hunger=4 affection=-10
+no hunger=-18 weight=24 health=-12
+end
+
+card fireworks_panic
+text
+Neighborhood fireworks are exploding outside. Force your terrified pet out of hiding to comfort them?
+yes affection=-20 health=-6
+no hunger=6 affection=4 weight=2
+end
+
+card plastic_wrapper_eat
+text
+Your pet swallowed a shiny plastic wrapper! Emergency trip to the vet clinic right now?
+yes hunger=6 affection=-14 health=15
+no weight=-10 health=-35
+end
+
+card muddy_puddle
+text
+A beautiful muddy puddle! Your pet wants to dive right in. Pull them back forcefully?
+yes affection=-14 health=4
+no affection=15 weight=4 health=-14
+end
+
+card begging_steak
+text
+They are crying and staring intensely at your seasoned, salty dinner steak. Share half?
+yes hunger=-15 affection=10 weight=14 health=-12
+no hunger=8 affection=-14
+end
+
+card harsh_brushing
+text
+Your companion's fur is heavily matted and tangled. Pull firmly with the metal brush?
+yes affection=-18 health=8
+no affection=4 weight=2 health=-14
+end
+
+card weekend_boarding
+text
+You need to travel. Leave your pet at a cheap, sketchy boarding kennel for the weekend?
+yes hunger=12 affection=-25 weight=-8 health=-15
+no affection=8 health=-4
+end
+
+card park_bully
+text
+An aggressive dog is barking at your pet in the park. Unleash your pet to let them fight back?
+yes affection=10 weight=-5 health=-28
+no hunger=4 affection=-16 health=4
+end
+
+card ice_cube_treat
+text
+It's scorching hot. Give your pet a freezing cold ice cube to crunch on?
+yes hunger=-2 affection=5 weight=-2 health=-4
+no hunger=4 affection=-6
+end
+
+card zoom_call_interrupt
+text
+You are on an important live business video call. Lock your crying pet in the bathroom?
+yes affection=-18 health=2
+no hunger=4 affection=8 weight=2
+end
+
+card algae_pond
+text
+Your pet wants to drink from a stagnant, green pond in the woods. Allow it?
+yes hunger=-10 weight=4 health=-26
+no hunger=6 affection=-12
+end
+
+card chewed_shoes
+text
+They completely destroyed your favorite pair of shoes. Rub their nose in it to teach a lesson?
+yes affection=-22 health=-2
+no hunger=2 affection=12 weight=4
+end
+
+card stray_cat_window
+text
+A stray cat is sitting outside the window. Let your pet rage and bark wildly at the glass?
+yes hunger=10 affection=6 weight=-6 health=-8
+no hunger=4 affection=-12
+end
+
+card bitter_vitamins
+text
+The vet prescribed foul-smelling wellness vitamins. Force-feed the pills down their throat?
+yes hunger=4 affection=-18 health=18
+no weight=4 health=-16
+end
+
+card bed_hogger
+text
+Your pet is sleeping horizontally, stealing 90% of your bed. Push them off onto the hard floor?
+yes affection=-15 health=4
+no affection=12 weight=2 health=-12
+end
+
+card stuck_tick
+text
+You found a massive tick on their neck. Rip it out quickly yourself instead of waiting for a professional?
+yes affection=-14 health=-10
+no affection=-4 weight=-4 health=-20
+end
+
+card new_baby_neighbor
+text
+A neighbor wants to bring their chaotic, loud toddler to play with your pet. Allow it?
+yes hunger=6 affection=-16 health=-8
+no affection=4 weight=2
+end
+
+card leftover_pizza
+text
+There's a stale slice of garlic pepperoni pizza on the table. Toss it down as a treat?
+yes hunger=-16 weight=18 health=-16
+no hunger=6 affection=-10
+end
+
+card extreme_cold_walk
+text
+It's a freezing blizzard outside. Go for your regular 2-hour walk anyway?
+yes hunger=16 affection=-4 weight=-18 health=-16
+no affection=-4 weight=12 health=-6
+end
+
+card fancy_perfume
+text
+Your pet smells awful. Spray them down with your expensive human designer perfume?
+yes affection=-14 health=-15
+no affection=-8 weight=2
+end
+
+card bee_chase
+text
+Your companion is actively snapping at a buzzing wasp. Step in and take the sting yourself?
+yes hunger=4 affection=14 health=4
+no affection=-10 health=-18
+end
+
+card catnip_overdose
+text
+Your pet uncovered the secret stash of catnip/herbs and is losing their mind. Confiscate it?
+yes affection=-16 health=4
+no hunger=8 affection=18 weight=6 health=-14
+end
+
+card fasting_day
+text
+The pet looking heavily bloated. Force them to completely fast (no food) for the next 24 hours?
+yes hunger=25 affection=-22 weight=-20 health=4
+no hunger=-6 weight=12 health=-8
+end
+
+card pet_exhibition
+text
+Sign up your companion for a high-stress local pet beauty show to win premium food?
+yes hunger=-15 affection=-18 weight=10 health=-8
+no affection=4 weight=2
+end
+
+card stray_puppy_pity
+text
+You found an abandoned stray puppy outside. Bring it home and give it your pet's favorite food?
+yes hunger=14 affection=-25 weight=-8 health=-6
+no affection=10 health=-4
+end
+
