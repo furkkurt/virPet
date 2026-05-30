@@ -295,6 +295,58 @@ no hunger=6 affection=-6
 end</pre>
 <p><code>#</code> ile başlayan satırlar ve boş satırlar yok sayılır.</p>
 
+<h4><code>public static List&lt;EventCard&gt; load(Path path) throws IOException</code> ne demek?</h4>
+<p>Bu satır bir metot tanımıdır. Her kelimeyi tek tek açıklayalım:</p>
+<ul>
+  <li><code>public</code> — Herkes bu metodu çağırabilir (dışarıya açık).</li>
+  <li><code>static</code> — Metot sınıfın kendisine aittir; bir <code>EventCardLoader</code> nesnesi
+      oluşturmadan <code>EventCardLoader.load(...)</code> şeklinde çağrılabilir.</li>
+  <li><code>List&lt;EventCard&gt;</code> — Metodun döndürdüğü şey: <code>EventCard</code> nesnelerinden
+      oluşan bir liste. Metot çağrıldığında geriye 44 kartlık bir liste verir.</li>
+  <li><code>load</code> — Metodun adı.</li>
+  <li><code>Path path</code> — Metodun aldığı parametre: okunacak dosyanın yolu.
+      Çağırırken <code>EventCardLoader.load(ASSETS.resolve("event_cards.cards"))</code>
+      dersiniz — bu <code>path</code> parametresine dosya adresini verir.</li>
+  <li><code>throws IOException</code> — "Bu metot dosya okuma hatası fırlatabilir" uyarısı.
+      Çağıran taraf bu hatayı <code>try-catch</code> ile yakalamalı ya da kendi de
+      <code>throws</code> ile bildirmelidir.</li>
+</ul>
+
+<h4><code>while</code> döngüsü nasıl çalışıyor?</h4>
+<pre>while ((line = reader.readLine()) != null) {
+    String t = line.trim();
+    if (t.isEmpty() || t.startsWith("#")) continue;
+
+    if (t.startsWith("card "))       → yeni kart başlat
+    else if ("text".equals(t))       → metin toplama moduna geç
+    else if ("end".equals(t))        → kartı listeye ekle
+    else if (t.startsWith("yes"))    → yes deltasını oku
+    else if (t.startsWith("no"))     → no deltasını oku
+    else if (inText)                 → metin satırını ekle
+}</pre>
+<p>Adım adım:</p>
+<ol>
+  <li><strong><code>reader.readLine()</code></strong> — Dosyadan bir satır okur. Dosya bitince
+      <code>null</code> döner ve döngü sona erer.</li>
+  <li><strong><code>line = reader.readLine()</code></strong> — Okunan satırı <code>line</code>
+      değişkenine atar. Parantez içindeki <code>=</code> sayesinde hem atama yapılır hem de
+      dönen değer <code>!= null</code> ile kontrol edilir — tek satırda iki iş birden.</li>
+  <li>Her döngü turunda satır trimlenip (boşlukları temizlenip) hangi anahtar kelimeyle başladığına bakılır.</li>
+  <li><code>card</code> → yeni kart için değişkenler sıfırlanır.
+      <code>text</code> → bundan sonraki satırlar metin olarak toplanır.
+      <code>yes</code>/<code>no</code> → delta parse edilir.
+      <code>end</code> → toplanan verilerle bir <code>EventCard</code> oluşturulur ve listeye eklenir.</li>
+  <li><code>inText</code> bayrak değişkeni: <code>text</code> satırı okunduğunda <code>true</code> olur,
+      <code>yes</code>/<code>no</code>/<code>end</code> satırı okunduğunda <code>false</code> olur.
+      Bu bayrak aktifken gelen satırlar olay metnine eklenir.</li>
+</ol>
+<div class="note">
+<strong><code>try (BufferedReader reader = ...)</code></strong> yapısına <em>try-with-resources</em> denir.
+Dosya okuyucu <code>try</code> bloğu bitince otomatik kapatılır — <code>reader.close()</code> yazmaya
+gerek kalmaz. Açtığınız dosyayı kapatmazsanız işletim sistemi kaynakları boşa harcanır;
+bu yapı onu önler.
+</div>
+
 <h4><code>StringBuilder</code> nedir?</h4>
 <p>Java'da <code>String</code> (metin) nesneleri değiştirilemezdir — bir metne her ekleme yaptığınızda
 aslında yeni bir metin oluşur. Az sayıda ekleme için sorun olmaz, ama kart metnini satır satır
@@ -352,6 +404,41 @@ cards.size();            // listede kaç eleman var</pre>
 <p><code>&lt;EventCard&gt;</code> kısmı "bu listenin elemanları <code>EventCard</code> tipindedir" demektir.
 Buna <strong>generic (tür parametresi)</strong> denir — listeye yanlışlıkla başka türde nesne koymanızı önler.</p>
 
+<h4>Yapıcı fonksiyon ve <code>Collections.unmodifiableList</code></h4>
+<pre>public EventCardDeck(List&lt;EventCard&gt; cards) {
+    if (cards == null || cards.isEmpty()) {
+        throw new IllegalArgumentException("cards must not be empty");
+    }
+    this.cards = Collections.unmodifiableList(new ArrayList&lt;&gt;(cards));
+}</pre>
+<p>Bu satır sağdan sola doğru okunursa daha iyi anlaşılır:</p>
+<ol>
+  <li><strong><code>new ArrayList&lt;&gt;(cards)</code></strong> — Gelen listenin bir <em>kopyasını</em> oluşturur.
+      Neden kopya? Çünkü dışarıdan gelen <code>cards</code> listesine birisi sonradan eleman
+      ekleyip çıkarabilir; kendi kopyamızı yaparsak dış değişikliklerden etkilenmeyiz.
+      Bunu "birisinin alışveriş listesini fotokopi çekmek" gibi düşünün — artık
+      orijinal listeye ne yapılırsa yapılsın, sizin kopyanız güvende.</li>
+  <li><strong><code>Collections.unmodifiableList(...)</code></strong> — Bu kopyayı <em>sadece okunabilir</em>
+      hale getirir. Artık bu listeye <code>.add()</code>, <code>.remove()</code> veya
+      <code>.set()</code> çağrılırsa program hata fırlatır. Amaç: kart destesi bir kez
+      oluşturulduktan sonra içeriği değişmesin — yanlışlıkla kart eklenip silinmesin.</li>
+  <li><strong><code>this.cards = ...</code></strong> — Sonucu nesnenin kendi <code>cards</code>
+      alanına atar. <code>this</code> "şu anki nesne" demektir; bu satırda parametre ile
+      alan aynı isme sahip olduğu için <code>this</code> ile ayrım yapılır.</li>
+</ol>
+<div class="note">
+<strong>Özet:</strong> <code>Collections.unmodifiableList(new ArrayList&lt;&gt;(cards))</code> =
+"gelen listenin değiştirilemez bir kopyasını yap". Savunmacı bir programlama tekniğidir —
+verinin yanlışlıkla bozulmasını önler.
+</div>
+
+<h4><code>EventCardDeck</code> nasıl çalışır? — Genel bakış</h4>
+<p>Bu sınıf çok basit bir iş yapar: elindeki kart listesinden rastgele kart çekmek.
+Yapıcı fonksiyon kartları alır ve güvenli bir kopyasını saklar.
+Sonra <code>drawNext()</code> çağrıldığında rastgele bir kart seçer — ama
+son çekilen kartın aynısını vermemeye çalışır (<code>do-while</code> döngüsü).
+Tek alan: <code>lastDrawn</code> = "en son çekilen kart".</p>
+
 <h4><code>drawNext</code> nasıl çalışır?</h4>
 <pre>public EventCard drawNext() {
     if (cards.size() == 1) {
@@ -381,6 +468,118 @@ Buna <strong>generic (tür parametresi)</strong> denir — listeye yanlışlıkl
 <p>Projenin en büyük dosyası. İki ekran arasında geçiş yapar (<code>CardLayout</code>):
 <code>creation</code> (oluşturma) ve <code>game</code> (oyun). Aşağıda bu dosyadaki temel
 kavramları tek tek açıklıyoruz.</p>
+
+<h4><code>loadGameFont</code> — fontu yükleme</h4>
+<pre>private static Font loadGameFont() throws IOException, FontFormatException {
+    Path fontPath = findFirstFontInAssets();
+    if (fontPath == null || !Files.isRegularFile(fontPath)) {
+        return new Font(Font.SANS_SERIF, Font.PLAIN, Math.round(FONT_UI));
+    }
+    try (InputStream in = Files.newInputStream(fontPath)) {
+        Font base = Font.createFont(Font.TRUETYPE_FONT, in);
+        GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(base);
+        return base;
+    }
+}</pre>
+<p>Bu fonksiyon oyunun yazı tipini yükler. Adım adım:</p>
+<ol>
+  <li><code>findFirstFontInAssets()</code> — <code>assets/</code> içindeki ilk <code>.ttf</code> veya
+      <code>.otf</code> dosyasını arar. Bulursa dosya yolunu döndürür.</li>
+  <li>Font dosyası bulunamazsa veya geçerli bir dosya değilse, sistemin varsayılan fontu
+      (<code>Font.SANS_SERIF</code>) kullanılır — program çökmeden devam eder.</li>
+  <li>Font dosyası varsa: <code>Files.newInputStream</code> ile dosyanın bayt akışını açar,
+      <code>Font.createFont</code> ile bu akıştan bir <code>Font</code> nesnesi oluşturur.</li>
+  <li><code>registerFont</code> — oluşturulan fontu Java'nın grafik ortamına kaydeder; böylece
+      tüm bileşenler bu fontu kullanabilir.</li>
+  <li><code>try (...)</code> yapısı sayesinde <code>InputStream</code> otomatik kapatılır.</li>
+</ol>
+<div class="note">
+<strong><code>throws IOException, FontFormatException</code></strong> — Bu metot iki tür hata
+fırlatabilir: dosya okuma hatası (<code>IOException</code>) ve geçersiz font formatı hatası
+(<code>FontFormatException</code>). Çağıran taraf bunları yakalamalıdır.
+</div>
+
+<h4><code>DirectoryStream</code> — klasör içeriğini gezme</h4>
+<pre>try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(ASSETS, pattern)) {
+    for (Path p : stream) {
+        return p;
+    }
+}</pre>
+<p><code>DirectoryStream</code>, bir klasörün içindeki dosyaları tek tek gezen bir yapıdır.
+Bunu "bir klasörü açıp içindeki dosyaları sırayla kontrol etmek" gibi düşünün.</p>
+<ul>
+  <li><code>Files.newDirectoryStream(ASSETS, pattern)</code> — <code>ASSETS</code> klasörünü açar
+      ve sadece <code>pattern</code>'e uyan dosyaları gezer. Örneğin <code>"*.ttf"</code> pattern'i
+      yalnızca <code>.ttf</code> uzantılı dosyaları gösterir.</li>
+  <li><code>for (Path p : stream)</code> — Bulunan her dosya yolunu <code>p</code> değişkenine atar
+      ve döngü gövdesini çalıştırır.</li>
+  <li><code>try (...)</code> ile sarmalanması gerekir çünkü <code>DirectoryStream</code> bir
+      işletim sistemi kaynağıdır — işi bitince kapatılmalıdır.</li>
+</ul>
+<p>Kısacası: <code>DirectoryStream</code> = "şu klasördeki dosyaları filtreli olarak listele".</p>
+
+<h4><code>findFirstFontInAssets</code> — ilk font dosyasını bul</h4>
+<pre>private static Path findFirstFontInAssets() throws IOException {
+    String[] patterns = {"*.ttf", "*.TTF", "*.otf", "*.OTF"};
+    for (String pattern : patterns) {
+        try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(ASSETS, pattern)) {
+            for (Path p : stream) {
+                return p;
+            }
+        }
+    }
+    return null;
+}</pre>
+<p>Bu fonksiyon <code>assets/</code> klasöründeki ilk font dosyasını bulmaya çalışır:</p>
+<ol>
+  <li>Dört farklı pattern dener: <code>*.ttf</code>, <code>*.TTF</code>, <code>*.otf</code>, <code>*.OTF</code>.
+      Farklı büyük/küçük harf kombinasyonlarını denemesinin sebebi: bazı dosya sistemlerinde
+      büyük-küçük harf ayrımı vardır (Linux gibi). <code>DS-TERM.TTF</code> dosyası
+      <code>*.ttf</code> pattern'ine uymaz ama <code>*.TTF</code>'e uyar.</li>
+  <li>Her pattern için <code>DirectoryStream</code> ile klasörü tarar.</li>
+  <li>İlk eşleşen dosyayı hemen döndürür — geri kalanına bakmaz (<code>return p</code>).
+      Çünkü tek bir font yeterlidir.</li>
+  <li>Hiçbir pattern eşleşme vermezse <code>null</code> döner. <code>loadGameFont</code> bu
+      durumda varsayılan fontu kullanır.</li>
+</ol>
+<p>Bu yaklaşım sayesinde font dosyasının adını kodda sabit yazmaya gerek kalmaz — klasöre
+hangi fontu koyarsanız onu otomatik bulur.</p>
+
+<h4><code>applyGlobalFonts</code> — global fontlar</h4>
+<pre>private static void applyGlobalFonts(Font base) {
+    Font ui = base.deriveFont(Font.PLAIN, FONT_UI);
+    UIManager.put("Button.font", ui);
+    UIManager.put("Label.font", ui);
+    UIManager.put("Panel.font", ui);
+    UIManager.put("OptionPane.font", ui);
+    UIManager.put("OptionPane.messageFont", base.deriveFont(Font.PLAIN, FONT_EVENT));
+    UIManager.put("OptionPane.buttonFont", ui);
+}</pre>
+<p>Swing'de her bileşenin (buton, etiket, panel vb.) varsayılan bir fontu vardır. Normalde
+her bileşene tek tek <code>setFont()</code> çağırmanız gerekir — bu çok zahmetlidir.
+<code>UIManager.put</code> ile <strong>tüm bileşen türlerinin varsayılan fontunu</strong>
+tek seferde değiştirirsiniz.</p>
+<ul>
+  <li><code>"Button.font"</code> — Tüm <code>JButton</code>'ların varsayılan fontu.</li>
+  <li><code>"Label.font"</code> — Tüm <code>JLabel</code>'ların varsayılan fontu.</li>
+  <li><code>"OptionPane.font"</code> — Açılır diyalog kutularının fontu.</li>
+</ul>
+<p>Bunu CSS'teki <code>body { font-family: ... }</code> kuralına benzetebilirsiniz — bir kez
+yazarsınız, her yere uygulanır. "Global font" denmesinin sebebi budur: tek tek değil,
+toptan ayarlanır.</p>
+
+<h4><code>JTextPane</code> nedir?</h4>
+<p><code>JTextPane</code>, Swing'de zengin metin gösterebilen bir bileşendir. Normal
+<code>JLabel</code> sadece düz metin gösterir; <code>JTextPane</code> ise HTML biçimlendirmesi
+destekler — kalın yazı, renkli metin, farklı boyutlar gibi.</p>
+<p>Projede olay kartı metni <code>JTextPane</code> ile gösterilir çünkü metni HTML olarak
+biçimlendiriyoruz (renk, hizalama vb.):</p>
+<pre>eventCardText.setContentType("text/html");  // "içerik HTML'dir" de
+eventCardText.setEditable(false);            // kullanıcı düzenleyemesin
+eventCardText.setOpaque(false);              // arka plan saydam olsun</pre>
+<p><code>JLabel</code> yerine <code>JTextPane</code> kullanmamızın sebebi: <code>JLabel</code>'da
+uzun metinler otomatik satır atlamaz ve HTML desteği sınırlıdır. <code>JTextPane</code> bize
+daha fazla kontrol verir.</p>
 
 <h4>Import'lar — neden bu kadar çok satır?</h4>
 <p>Java'da bir sınıfı kullanmadan önce nereden geldiğini söylemeniz gerekir. Her <code>import</code>
@@ -436,33 +635,76 @@ Kutuyu biçimlendiren tipik metotlar:</p>
 
 <h4><code>BorderFactory</code> nedir?</h4>
 <p><code>BorderFactory</code>, bileşenlerin etrafına çeşitli çerçeveler üreten fabrika sınıfıdır.
-"Bana şu tarzda bir kenarlık ver" dersiniz, o da size hazır bir nesne döndürür.</p>
-<pre>// İnce çizgi kenarlık (renk, kalınlık, yuvarlatılmış köşe)
-BorderFactory.createLineBorder(COZY_BORDER, 1, true)
+"Bana şu tarzda bir kenarlık ver" dersiniz, o da size hazır bir nesne döndürür.
+Projede kullandığımız dört tür kenarlık:</p>
 
-// İç boşluk kenarlığı (üst, sol, alt, sağ piksel)
-BorderFactory.createEmptyBorder(10, 12, 10, 12)
+<p><strong>1. <code>createLineBorder(renk, kalınlık, yuvarlatılmış)</code></strong> — İnce çizgi kenarlık.</p>
+<pre>BorderFactory.createLineBorder(COZY_BORDER, 1, true)</pre>
+<p>Bileşenin etrafına 1 piksel kalınlığında, belirtilen renkte bir çizgi çizer.
+Üçüncü parametre <code>true</code> ise köşeler yuvarlatılır. CSS'teki
+<code>border: 1px solid renk; border-radius: ...</code>'a karşılık gelir.</p>
 
-// İkisini birleştir: dışta çizgi, içte boşluk
-BorderFactory.createCompoundBorder(çizgi, boşluk)
+<p><strong>2. <code>createEmptyBorder(üst, sol, alt, sağ)</code></strong> — İç boşluk kenarlığı.</p>
+<pre>BorderFactory.createEmptyBorder(10, 12, 10, 12)</pre>
+<p>Görünür bir çizgi çizmez; sadece bileşenin içeriği ile kenarı arasına boşluk koyar.
+CSS'teki <code>padding: 10px 12px</code>'e karşılık gelir. Yazının kenara yapışmaması
+için kullanılır.</p>
 
-// Başlıklı kenarlık: çerçevenin üstünde küçük bir etiket
-BorderFactory.createTitledBorder(çizgi, "Event")</pre>
-<p>Bu yapılar <code>setBorder()</code> ile bileşene atanır. CSS'teki <code>border</code> ve
-<code>padding</code> kavramlarına benzer.</p>
+<p><strong>3. <code>createCompoundBorder(dışKenarlık, içKenarlık)</code></strong> — İkisini birleştirir.</p>
+<pre>BorderFactory.createCompoundBorder(
+    BorderFactory.createLineBorder(renk, 1, true),  // dış: çizgi
+    BorderFactory.createEmptyBorder(10, 12, 10, 12) // iç: boşluk
+)</pre>
+<p>Dışta görünür bir çerçeve, içte boşluk — ikisi tek bir kenarlık nesnesi olarak atanır.
+CSS'te <code>border</code> + <code>padding</code> birlikte kullanmaya benzer.</p>
+
+<p><strong>4. <code>createTitledBorder(kenarlık, başlık)</code></strong> — Başlıklı kenarlık.</p>
+<pre>BorderFactory.createTitledBorder(
+    BorderFactory.createLineBorder(renk, 1, true), "Event")</pre>
+<p>Çerçevenin üst kenarında küçük bir etiket ("Event") görüntüler. Gruplandırma amaçlıdır —
+HTML'deki <code>&lt;fieldset&gt;&lt;legend&gt;</code> yapısına benzer.</p>
+
+<p>Tüm bu kenarlıklar <code>setBorder()</code> ile bileşene atanır.</p>
+
+<h4><code>setContentAreaFilled</code> ve <code>setFocusPainted</code></h4>
+<pre>private static void styleCozyButton(javax.swing.AbstractButton b) {
+    b.setBackground(COZY_BUTTON_BG);
+    b.setOpaque(true);
+    b.setContentAreaFilled(true);
+    b.setFocusPainted(false);
+    // ...
+}</pre>
+<p><strong><code>b.setContentAreaFilled(true)</code></strong> — Butonun iç alanının arka plan rengiyle
+doldurulup doldurulmayacağını belirler. <code>true</code> ise buton <code>setBackground</code> ile
+verdiğiniz rengi gösterir; <code>false</code> ise buton transparan olur ve sadece metin görünür.
+Bazı görünüm (Look &amp; Feel) sistemlerinde buton kendi gradyan rengini çizer;
+<code>setContentAreaFilled(true)</code> + <code>setOpaque(true)</code> ile "hayır, benim
+verdiğim düz rengi kullan" deriz.</p>
+
+<p><strong><code>b.setFocusPainted(false)</code></strong> — Buton klavye odağını (focus) aldığında
+etrafına çizilen kesikli çizgiyi kapatır. Normalde Tab tuşuyla bir butona odaklandığınızda
+butonun etrafında ince kesikli bir kenarlık belirir — bu görsel ipucu erişilebilirlik içindir.
+Biz kendi özel stilimizi uyguladığımız için bu varsayılan odak çizgisini kapatıyoruz;
+görünümü temiz tutar.</p>
 
 <h4><code>showFrame</code> ve <code>JFrame</code> yapısı</h4>
 <pre>private void showFrame() {
     initComponentFonts(baseFont);
     mainFrame = new JFrame("Virtual pet");
     mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    // ...
+    mainFrame.addWindowListener(new WindowAdapter() {
+        @Override
+        public void windowClosing(WindowEvent e) {
+            GameAudio.shutdown();
+        }
+    });
     JPanel root = new JPanel(new BorderLayout());
     root.add(cards, BorderLayout.CENTER);
     mainFrame.setContentPane(root);
     mainFrame.pack();
     mainFrame.setLocationRelativeTo(null);
     mainFrame.setVisible(true);
+    GameAudio.startBgMusic(ASSETS);
 }</pre>
 <p><code>JFrame</code>, masaüstü uygulamanın ana penceresidir — başlık çubuğu, kapatma düğmesi olan kare.
 İçine bileşenler eklenir ve sonunda gösterilir:</p>
@@ -474,6 +716,45 @@ BorderFactory.createTitledBorder(çizgi, "Event")</pre>
   <li><code>setLocationRelativeTo(null)</code> — pencereyi ekranın ortasına yerleştirir.</li>
   <li><code>setVisible(true)</code> — pencereyi görünür yapar. Bu çağrılmadan pencere gizli kalır.</li>
 </ol>
+
+<h4><code>JPanel root</code> nedir, ne amaçla kullanılır?</h4>
+<pre>JPanel root = new JPanel(new BorderLayout());
+butterPanel(root);
+root.add(cards, BorderLayout.CENTER);
+mainFrame.setContentPane(root);</pre>
+<p><code>root</code>, penceredeki <strong>en üst düzey kap paneldir</strong> — tüm diğer panellerin
+ve bileşenlerin yerleştirildiği kök kutu. HTML'deki <code>&lt;body&gt;</code>'ye benzetebilirsiniz:
+sayfa içeriğini tutan en dış kap.</p>
+<ul>
+  <li><code>new JPanel(new BorderLayout())</code> — Kök panelin düzen yöneticisi olarak
+      <code>BorderLayout</code> seçilir (NORTH, SOUTH, CENTER gibi bölgeler).</li>
+  <li><code>butterPanel(root)</code> — Arka plan rengini ayarlar.</li>
+  <li><code>root.add(cards, BorderLayout.CENTER)</code> — <code>CardLayout</code> ile yönetilen
+      ekranları (oluşturma ve oyun) kök panelin ortasına yerleştirir.</li>
+  <li><code>mainFrame.setContentPane(root)</code> — Pencereye "içeriğin bu panel" der.</li>
+</ul>
+<p>Kısacası <code>root</code>, pencere ile içerik arasındaki köprüdür. Pencere doğrudan bileşen
+almaz; önce bir "kök panel" oluşturulur, bileşenler ona eklenir, sonra panel pencereye atanır.</p>
+
+<h4><code>addWindowListener</code> — pencere kapanırken ses kapatma</h4>
+<pre>mainFrame.addWindowListener(new WindowAdapter() {
+    @Override
+    public void windowClosing(WindowEvent e) {
+        GameAudio.shutdown();
+    }
+});</pre>
+<p>Bu kod, pencere kapatılırken çalışacak bir dinleyici (listener) ekler:</p>
+<ul>
+  <li><strong><code>WindowAdapter</code></strong> — Pencere olaylarını dinleyen bir yardımcı sınıftır.
+      Pencere açıldığında, kapandığında, simge durumuna küçültüldüğünde vb. çağrılan metotları vardır.
+      Hepsi boştur — sadece ihtiyacınız olanı override edersiniz.</li>
+  <li><strong><code>windowClosing</code></strong> — Kullanıcı pencere kapatma düğmesine (✕) bastığında
+      çağrılır. Biz burada <code>GameAudio.shutdown()</code>'ı çağırıyoruz — arka plan müziğini
+      ve tüm ses efektlerini durdurur.</li>
+  <li><strong>Neden gerekli?</strong> — <code>EXIT_ON_CLOSE</code> programı kapatır ama ses
+      <code>Clip</code> nesneleri arka planda çalmaya devam edebilir. <code>shutdown()</code> ile
+      bu kaynaklar temiz bir şekilde serbest bırakılır — program "temiz" kapanır.</li>
+</ul>
 
 <h4><code>JPanel</code>, <code>FlowLayout</code> ve <code>setAlignmentX</code></h4>
 <p><strong><code>JPanel</code></strong>, Swing'de dikdörtgen bir "kutu" dur. İçine başka bileşenler koyarsınız.
@@ -501,6 +782,63 @@ eventScroll.setHorizontalScrollBarPolicy(HORIZONTAL_SCROLLBAR_NEVER);
 eventScroll.setVerticalScrollBarPolicy(VERTICAL_SCROLLBAR_AS_NEEDED);</pre>
 <p>"Yatay kaydırma asla gösterme, dikey kaydırma gerekirse göster" — metin aşağı uzadığında
 kullanıcı kaydırarak okuyabilir.</p>
+
+<h4><code>scanNumberedPng</code> — numaralı PNG dosyalarını tarama</h4>
+<pre>private static List&lt;Path&gt; scanNumberedPng(Path dir, String prefix) throws IOException {
+    if (!Files.isDirectory(dir)) {
+        return Collections.emptyList();
+    }
+    Pattern pattern = Pattern.compile(
+        "^" + Pattern.quote(prefix) + "(\\d+)\\.png$",
+        Pattern.CASE_INSENSITIVE);
+    List&lt;Integer&gt; ids = new ArrayList&lt;&gt;();
+    try (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(dir, "*.png")) {
+        for (Path p : stream) {
+            String name = p.getFileName().toString();
+            Matcher m = pattern.matcher(name);
+            if (m.matches()) {
+                ids.add(Integer.parseInt(m.group(1)));
+            }
+        }
+    }
+    Collections.sort(ids);
+    List&lt;Path&gt; out = new ArrayList&lt;&gt;();
+    for (int id : ids) {
+        out.add(dir.resolve(prefix + id + ".png"));
+    }
+    return out;
+}</pre>
+<p>Bu fonksiyon, bir klasördeki <code>hat0.png</code>, <code>hat1.png</code>, <code>hat2.png</code>
+gibi numaralı dosyaları bulur ve sıralı bir liste olarak döndürür. Adım adım:</p>
+<ol>
+  <li>Verilen klasör yoksa boş liste döner.</li>
+  <li>Bir <strong>regex (düzenli ifade)</strong> kalıbı oluşturur: <code>^hat(\d+)\.png$</code> gibi.
+      Bu kalıp "hat ile başla, ardından bir veya daha fazla rakam gelsin, .png ile bitsin" demektir.</li>
+  <li><code>DirectoryStream</code> ile klasördeki tüm <code>*.png</code> dosyalarını gezer.</li>
+  <li>Her dosya adını regex'e karşı kontrol eder. Eşleşirse parantez içindeki rakamı (grup 1) alır
+      ve <code>ids</code> listesine ekler.</li>
+  <li>Numaraları sıralar (<code>Collections.sort</code>), sonra her numara için tam dosya yolunu
+      (<code>dir.resolve("hat0.png")</code>) oluşturup listeye ekler.</li>
+</ol>
+<p>Böylece oyun başlarken kaç şapka/bacak parçası var otomatik tespit edilir — yeni parça eklemek
+için dosyayı klasöre koymak yeterlidir, kodda değişiklik gerekmez.</p>
+
+<h4><code>!name.matches("\\d+")</code> — regex ile sayı kontrolü</h4>
+<pre>String name = child.getFileName().toString();
+if (!name.matches("\\d+")) {
+    continue;
+}</pre>
+<p>Bu satır, bir klasör adının <strong>sadece rakamlardan</strong> oluşup oluşmadığını kontrol eder.</p>
+<ul>
+  <li><code>\\d</code> — Regex'te "herhangi bir rakam" (0–9) demektir. Java'da ters eğik çizgi
+      (<code>\</code>) kaçış karakteri olduğundan <code>\\d</code> yazılır.</li>
+  <li><code>+</code> — "Bir veya daha fazla" demektir. <code>\\d+</code> = "bir veya daha fazla rakam".</li>
+  <li><code>matches</code> — Metnin <strong>tamamının</strong> bu kalıba uyup uymadığını kontrol eder.</li>
+  <li><code>!</code> — Sonucu tersine çevirir (değilse).</li>
+</ul>
+<p>Yani satır şunu söyler: "Klasör adı sadece rakamlardan oluşmuyorsa bu klasörü atla."
+<code>bodies/</code> altındaki alt klasörler <code>1</code>, <code>2</code>, <code>3</code> gibi
+numaralıdır; <code>.DS_Store</code> gibi istenmeyen dosya/klasörler bu kontrolle elenir.</p>
 
 <h4>Yazıları panele sığdırma (<code>wrapTextToLines</code>)</h4>
 <p>Olay kartı metni panelden geniş olabilir. Metni satırlara bölme işlemi şöyle çalışır:</p>

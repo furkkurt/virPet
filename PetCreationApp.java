@@ -70,7 +70,7 @@ public class PetCreationApp {
     /** Sprite scale relative to the largest size that fits the panel (smaller = tinier pet). */
     private static final float SPRITE_SIZE_FACTOR = 0.78f;
     /** Push sprite down so feet sit nearer the bottom of the bg (0 = centered). */
-    private static final float SPRITE_DOWN_BIAS = 0.22f;
+    private static final float SPRITE_DOWN_BIAS = 0.3f;
 
     private static final Color BUTTER_YELLOW = new Color(255, 244, 190);
     private static final Color COZY_TEXT = new Color(92, 72, 58);
@@ -93,13 +93,16 @@ public class PetCreationApp {
     private static final float FONT_ARROW = 36f;
     private static final float FONT_CHOICE = 30f;
     private static final int ARROW_GAP = 48;
+    private static final int PART_ROW_GAP = 22;
+    private static final int PART_ROW_LABEL_GAP = 18;
+    private static final int PART_ROW_SPACING = 16;
+    private static final int PART_ROW_HEIGHT = 52;
     private static final int EVENT_TEXT_MAX_HEIGHT = 148;
     /** Extra pixels subtracted from wrap width so glyphs never clip at the edge. */
     private static final int EVENT_TEXT_WRAP_MARGIN = 20;
     /** Space below the name field before part rows. */
     private static final int NAME_BLOCK_BOTTOM_GAP = 20;
     private static final int PET_NAME_FIELD_HEIGHT = 44;
-    private static final int PART_ROW_STATUS_WIDTH = 56;
     private static final int CREATION_COLUMN_WIDTH = PET_PANEL_DISPLAY_WIDTH + 24;
     private static final int STAT_BAR_HEIGHT = 24;
     private static final int STAT_BAR_GAP = 10;
@@ -147,6 +150,7 @@ public class PetCreationApp {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
+            //Assetsi bulamazsa hata alırız onu fırlatalım.
             try {
                 new PetCreationApp().showFrame();
             } catch (Exception e) {
@@ -200,11 +204,15 @@ public class PetCreationApp {
     private void initComponentFonts(Font base) {
         eventCardFont = base.deriveFont(Font.PLAIN, FONT_EVENT);
         statsFont = base.deriveFont(Font.PLAIN, FONT_STATS);
+        //bold yapmış virgülden sonra boyunu yazıyor!
         arrowFont = base.deriveFont(Font.BOLD, FONT_ARROW);
+        //html formatı yapınca renk boyut kullanabiliyoruz.!
         eventCardText.setContentType("text/html");
         eventCardText.setEditable(false);
+        //yazının kendi arkaplanı olmaz
         eventCardText.setOpaque(false);
         eventCardText.setBorder(null);
+        //mouse gelince mavi olmaz
         eventCardText.setFocusable(false);
         eventCardText.setFont(eventCardFont);
         styleCozyTextField(petNameField, base);
@@ -213,10 +221,15 @@ public class PetCreationApp {
     private static void styleCozyTextField(JTextField field, Font base) {
         field.setBackground(COZY_BUTTON_BG);
         field.setForeground(COZY_TEXT);
+        //imleç rengi
         field.setCaretColor(COZY_TEXT);
         field.setFont(base.deriveFont(Font.PLAIN, FONT_UI));
+
+        // İkisini birleştir: dışta çizgi, içte boşluk
         field.setBorder(BorderFactory.createCompoundBorder(
+                // İnce çizgi kenarlık (renk, kalınlık, yuvarlatılmış köşe)
                 BorderFactory.createLineBorder(COZY_BUTTON_HOVER_EDGE, 1, true),
+                // İç boşluk kenarlığı (üst, sol, alt, sağ piksel)
                 BorderFactory.createEmptyBorder(10, 12, 10, 12)));
     }
 
@@ -232,6 +245,7 @@ public class PetCreationApp {
     }
 
     private static TitledBorder cozyTitledBorder(String title) {
+        // Başlıklı kenarlık: çerçevenin üstünde küçük bir etiket
         TitledBorder border = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(COZY_BORDER, 1, true), title);
         border.setTitleColor(COZY_TEXT);
@@ -243,6 +257,7 @@ public class PetCreationApp {
             return null;
         }
         try {
+            //burası resme bakıyor gerisi cırt
             return ImageIO.read(PET_WINDOW_BG.toFile());
         } catch (IOException e) {
             return null;
@@ -251,6 +266,7 @@ public class PetCreationApp {
 
     private static void butterPanel(JPanel p) {
         p.setBackground(BUTTER_YELLOW);
+        //arkaplanı var yağlı
         p.setOpaque(true);
     }
 
@@ -275,7 +291,9 @@ public class PetCreationApp {
     private void showFrame() {
         initComponentFonts(baseFont);
 
+        //Virtual Pet başlıklı uygulama pencersi oluşturulur
         mainFrame = new JFrame("Virtual pet");
+        //uygulamayı kapatınca arkada terminalde çalışan program da komple duruyor.
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.addWindowListener(new WindowAdapter() {
             @Override
@@ -299,7 +317,9 @@ public class PetCreationApp {
         installTapSounds(mainFrame);
 
         mainFrame.pack();
+        //pencereyi ekrnın tam ortasına koyar.
         mainFrame.setLocationRelativeTo(null);
+        //pencereyi görünür kılar
         mainFrame.setVisible(true);
         GameAudio.startBgMusic(ASSETS);
     }
@@ -346,14 +366,14 @@ public class PetCreationApp {
         JPanel south = new JPanel();
         south.setLayout(new javax.swing.BoxLayout(south, javax.swing.BoxLayout.Y_AXIS));
         butterPanel(south);
-        south.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+        south.setBorder(BorderFactory.createEmptyBorder(12, 0, 8, 0));
         south.setAlignmentX(Component.CENTER_ALIGNMENT);
         south.add(creationPartRow("Hat", hatStatus, () -> cycleHat(-1), () -> cycleHat(1)));
-        south.add(javax.swing.Box.createVerticalStrut(8));
+        south.add(javax.swing.Box.createVerticalStrut(PART_ROW_SPACING));
         south.add(creationPartRow("Body", bodyStatus, () -> cycleBody(-1), () -> cycleBody(1)));
-        south.add(javax.swing.Box.createVerticalStrut(8));
+        south.add(javax.swing.Box.createVerticalStrut(PART_ROW_SPACING));
         south.add(creationPartRow("Face", faceStatus, () -> cycleFace(-1), () -> cycleFace(1)));
-        south.add(javax.swing.Box.createVerticalStrut(8));
+        south.add(javax.swing.Box.createVerticalStrut(PART_ROW_SPACING));
         south.add(creationPartRow("Legs", legStatus, () -> cycleLeg(-1), () -> cycleLeg(1)));
 
         JPanel southColumn = new JPanel();
@@ -362,7 +382,7 @@ public class PetCreationApp {
         southColumn.setAlignmentX(Component.CENTER_ALIGNMENT);
         southColumn.setBorder(BorderFactory.createEmptyBorder(0, 12, 8, 12));
         southColumn.add(south);
-        southColumn.add(javax.swing.Box.createVerticalStrut(10));
+        southColumn.add(javax.swing.Box.createVerticalStrut(24));
         setupStartLink();
         updateStartLinkState();
         southColumn.add(buildStartBlock());
@@ -512,29 +532,26 @@ public class PetCreationApp {
     }
 
     private JPanel creationPartRow(String title, JLabel status, Runnable onPrev, Runnable onNext) {
-        JPanel row = new JPanel(new BorderLayout(6, 0));
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, PART_ROW_GAP, 0));
         butterPanel(row);
         row.setAlignmentX(Component.CENTER_ALIGNMENT);
-        Dimension rowW = new Dimension(PET_PANEL_DISPLAY_WIDTH, 40);
-        row.setPreferredSize(rowW);
-        row.setMaximumSize(new Dimension(CREATION_COLUMN_WIDTH, 40));
+        row.setPreferredSize(new Dimension(CREATION_COLUMN_WIDTH, PART_ROW_HEIGHT));
+        row.setMaximumSize(new Dimension(CREATION_COLUMN_WIDTH, PART_ROW_HEIGHT));
 
         JLabel label = new JLabel(title);
         label.setForeground(COZY_TEXT);
-        label.setPreferredSize(new Dimension(PART_ROW_STATUS_WIDTH, 24));
+        label.setFont(baseFont.deriveFont(Font.PLAIN, FONT_UI));
+        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, PART_ROW_LABEL_GAP));
 
         status.setForeground(COZY_TEXT);
-        status.setHorizontalAlignment(SwingConstants.TRAILING);
-        status.setPreferredSize(new Dimension(PART_ROW_STATUS_WIDTH, 24));
+        status.setHorizontalAlignment(SwingConstants.CENTER);
+        status.setFont(baseFont.deriveFont(Font.PLAIN, FONT_UI));
+        status.setPreferredSize(new Dimension(40, 24));
 
-        JPanel arrows = new JPanel(new FlowLayout(FlowLayout.CENTER, ARROW_GAP, 0));
-        butterPanel(arrows);
-        arrows.add(createArrowLink("<", onPrev));
-        arrows.add(createArrowLink(">", onNext));
-
-        row.add(label, BorderLayout.WEST);
-        row.add(arrows, BorderLayout.CENTER);
-        row.add(status, BorderLayout.EAST);
+        row.add(label);
+        row.add(createArrowLink("<", onPrev));
+        row.add(status);
+        row.add(createArrowLink(">", onNext));
         return row;
     }
 
@@ -914,10 +931,11 @@ public class PetCreationApp {
         if (n <= 0) {
             return "(none)";
         }
-        return (idx + 1) + " / " + n;
+        return (idx + 1) + "/" + n;
     }
 
     private static List<Path> scanNumberedPng(Path dir, String prefix) throws IOException {
+        //aldığı dir parametresi bir klasör değilse boş bir liste dönüyor.
         if (!Files.isDirectory(dir)) {
             return Collections.emptyList();
         }
@@ -940,12 +958,14 @@ public class PetCreationApp {
         return out;
     }
 
+
     private static List<Integer> scanStyleIdsWithNormalBody(Path bodiesRoot) throws IOException {
         if (!Files.isDirectory(bodiesRoot)) {
             return Collections.emptyList();
         }
         List<Integer> ids = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(bodiesRoot)) {
+            //stream (klasörü gezen DirectoryStream nesnesi) içindeki her Path'a child diye hitap ediyoruz :)
             for (Path child : stream) {
                 if (!Files.isDirectory(child)) {
                     continue;

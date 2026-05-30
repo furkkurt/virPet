@@ -6,7 +6,7 @@ public final class EventCard {
     private final StatDelta yes;
     private final StatDelta no;
     
-    //CONSTRUCTOR SINIFI (YAPICI)
+    //CONSTRUCTOR FONKSİYONU (YAPICI)
     public EventCard(String id, String text, StatDelta yes, StatDelta no) {
         this.id = id;
         this.text = text;

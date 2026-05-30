@@ -14,11 +14,8 @@ public final class StatDelta {
         this.affection = affection;
         this.weight = weight;
         this.health = health;
-        System.outorintln("STAT DELTA NESNESI OLUŞTURULDU")
     }
     
     //hepsi 0 olan bir nesne
     public static final StatDelta ZERO = new StatDelta(0, 0, 0, 0);
 }
-
-StatDelta asdf = new StatDelta(1,1,1,1); 
